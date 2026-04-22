@@ -45,18 +45,25 @@ export default function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex min-h-[calc(100vh-3.5rem)]"
           >
             <PageComponent onNavigate={handleNavigate} />
           </motion.div>
         </AnimatePresence>
       </div>
-      <footer className="border-t border-border/30 py-4 text-center text-xs text-muted-foreground">
-        <span className="font-mono">&copy; {new Date().getFullYear()} 陳家盛 &middot; React + TypeScript Midterm</span>
+      <footer className="mt-auto border-t border-border/20 py-5">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-6">
+          <span className="font-mono text-[11px] text-muted-foreground/50">
+            &copy; {new Date().getFullYear()} 陳家盛
+          </span>
+          <span className="font-mono text-[11px] text-muted-foreground/30">
+            React + TypeScript &middot; Midterm Project
+          </span>
+        </div>
       </footer>
     </div>
   );
