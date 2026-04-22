@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Home, User, Gamepad2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -18,6 +19,20 @@ const navItems: { key: Page; label: string; icon: typeof Home }[] = [
 ];
 
 export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0) {
+        setScrollProgress((scrollTop / docHeight) * 100);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl">
       <nav className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
@@ -55,6 +70,13 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           ))}
         </div>
       </nav>
+      <div
+        className="absolute bottom-0 left-0 h-0.5 bg-foreground/20 transition-opacity duration-300"
+        style={{
+          width: `${scrollProgress}%`,
+          opacity: scrollProgress > 0 ? 1 : 0,
+        }}
+      />
     </header>
   );
 }

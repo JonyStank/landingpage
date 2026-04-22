@@ -35,39 +35,87 @@ Work Log:
 - Tested game logic: win detection, auto-reset, score tracking — all passed
 - Verified zero JS errors in browser console
 - Identified bug: unused `Separator` import in profile.tsx — fixed
-- Enhanced globals.css: darker background theme (0.1 → 0.1 oklch), added `.ambient-grid`, `.glow-text`, `.glass-card` utilities, custom scrollbar styling, `::selection` styling
-- Rewrote Navbar: added animated layoutId pill indicator for active tab, pill-style navigation group, improved logo styling with muted delimiters
-- Rewrote Home page: added ambient grid background, subtle gradient glow orb, 4 feature cards (TypeScript, Component Architecture, Interactive Game, Dark Minimalist), live status dot indicator, staggered reveal animations, improved CTA button hover effects with translate
-- Rewrote Profile page: added avatar header with gradient banner, contact info (email, github, location, graduation), expanded to 4 skills (Python 85%, JavaScript 80%, TypeScript 75%, SQL 70%) with descriptions, interest cards with icons and hover effects, education timeline (2022-2025) with visual connectors
-- Rewrote Tic-Tac-Toe game: added full keyboard support (arrow keys + Enter, numpad 1-9, Ctrl+Z for undo), move history display with coordinates, game counter, selected cell highlighting with numpad hints, improved score display with uppercase labels, reset score button, amber-themed win highlights, wrapped board in container with rounded border
-- Updated page.tsx: improved footer with two-column layout, simplified page transitions
-- Ran ESLint — zero errors
-- Final QA via agent-browser: all pages render correctly, game logic works, no JS errors
+- Enhanced globals.css: darker background theme, added `.ambient-grid`, `.glow-text`, `.glass-card` utilities, custom scrollbar styling, `::selection` styling
+- Rewrote Navbar: animated layoutId pill indicator, pill-style navigation group, improved logo
+- Rewrote Home page: ambient grid, gradient glow orb, 4 feature cards, staggered animations
+- Rewrote Profile page: avatar + banner, contact info, 4 skills with descriptions, interests, timeline
+- Rewrote Tic-Tac-Toe: keyboard support, move history, game counter, reset score, amber win highlights
+- Updated page.tsx: improved footer layout, simplified transitions
 
 Stage Summary:
-- All 3 pages significantly enhanced with richer content and visual polish
-- Game now has keyboard support, move history, game counter
-- Profile expanded with avatar, contact info, timeline, 4 skills with descriptions
-- Home page features 4 feature cards and ambient background effects
-- Navbar has animated pill indicator for active tab
-- Custom scrollbar and selection styling added
-- Lint clean, zero errors, zero JS runtime errors
-- Page compiles to 31KB, dev server running on port 3000
+- All 3 pages enhanced with richer content and visual polish
+- Game has keyboard support, move history, game counter
+- Profile has avatar, contact info, timeline, 4 skills
+- Home has 4 feature cards and ambient effects
+- Lint clean, zero errors, 31KB page
+
+---
+Task ID: 3
+Agent: WebDevReview Agent (Round 2)
+Task: Major Feature Additions and Advanced Styling
+
+Work Log:
+- QA tested all 3 pages via agent-browser — all passed, zero JS errors
+- Enhanced globals.css with 4 new keyframes (float, pulse-glow, shimmer, typing), 7 utility classes (floating-particle, gradient-border, shimmer, typing-cursor, noise-overlay, enhanced glow-text/ambient-grid), improved scrollbar (8px, more visible), focus-visible styles
+- Rewrote Tic-Tac-Toe with AI opponent:
+  - Minimax algorithm for unbeatable AI
+  - Game mode toggle: 2 Players / vs AI
+  - AI difficulty: Easy (random), Medium (50/50 optimal+random), Hard (full minimax)
+  - AI auto-responds after 400ms delay with thinking indicator
+  - AI-aware controls: undo works differently, board disabled during AI turn
+  - Adaptive labels: "You (X)" / "AI (O)" in AI mode
+- Enhanced Profile page:
+  - New Projects section with 3 projects (CryptoTracker, AlgoTrade Bot, FinDash)
+  - Project status badges (Active green, In Development amber)
+  - Enhanced interests with gradient left-border accents and descriptions
+  - GitHub-style contribution grid (7x15) with staggered animation
+  - New icons: BarChart3, ExternalLink, GitBranch
+- Enhanced Home page:
+  - Animated typing effect cycling through 4 phrases (80ms type, 40ms delete, 2s pause)
+  - Blinking cursor using typing-cursor utility
+  - Code snippet display with terminal-style card (3 colored dots, pseudo syntax highlighting)
+  - 8 floating particle elements with staggered animation
+  - Feature cards with gradient border on hover + ChevronRight slide-in
+  - Stats section with pulsing emerald dot indicators
+- Enhanced Navbar:
+  - Scroll progress bar (2px, bottom of header, opacity transition)
+- Enhanced main page:
+  - Scroll-to-top button (bottom-right, appears after 300px scroll, framer motion)
+  - Footer with 3-column responsive layout (copyright, nav links, branding)
+- Ran ESLint — zero errors
+- Final QA via agent-browser: all new features verified working
+  - Typing animation cycles correctly
+  - AI responds after player moves in vs AI mode
+  - Projects section renders with status badges
+  - Scroll-to-top appears/disappears correctly
+  - Zero JS runtime errors
+
+Stage Summary:
+- AI opponent with 3 difficulty levels added to Tic-Tac-Toe (minimax algorithm)
+- Profile expanded with Projects section, contribution grid, enhanced interests
+- Home page has typing animation, code snippet, floating particles
+- Global CSS enriched with 4 keyframes, 7 utilities, better scrollbar
+- Navbar has scroll progress bar
+- Scroll-to-top button + enhanced footer with nav links
+- Page compiles to 38KB, lint clean, zero errors
 
 Current Project Status:
-- Fully functional React + TypeScript midterm project with dark minimalist design
-- 3 pages: Home (intro + features), Profile (陳家盛 details), Game (Tic-Tac-Toe)
+- Feature-rich React + TypeScript midterm project with dark minimalist design
+- 3 pages: Home (typing effect, code snippet, particles, feature cards), Profile (skills, projects, timeline, contribution grid), Game (2P/AI with 3 difficulties)
 - GitHub Pages deployment configured (workflow + static export + 404 redirect)
-- Ready for final review or additional feature requests
+- Comprehensive animation system (framer-motion + CSS keyframes)
+- All features tested and verified working
 
 Unresolved Issues / Risks:
-- None identified — all bugs fixed, all features tested
-- The auto-reset timer (3s) in Tic-Tac-Toe may feel short; consider making it configurable
-- Profile contact info (email, github) uses placeholder data; real data should be updated
+- None identified — all bugs fixed, all features tested, zero errors
+- The auto-reset timer (3s) in Tic-Tac-Toe is still fixed; could be made configurable
+- Profile contact info uses placeholder data; should be updated with real data
+- The AI in "Medium" mode could be more nuanced (currently 50/50 random/optimal)
 
 Recommended Next Steps:
-- Add responsive mobile testing / touch gesture support for the game
-- Consider adding a dark/light theme toggle (currently locked to dark)
-- Add more interactive elements: hover card animations, parallax effects
-- Add a "Projects" section to the Profile page
-- Consider adding sound effects for game moves/wins
+- Add dark/light theme toggle (localStorage persistence) for visual variety
+- Add Web Audio API sound effects for game moves/wins
+- Add a "Contact" form section to Profile page
+- Consider adding a 404 page with styled illustration
+- Add more responsive testing on very small screens (< 360px)
+- Consider adding a simple crypto price ticker widget to the Home page (matches student's interests)

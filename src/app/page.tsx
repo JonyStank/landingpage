@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/navbar";
 import Home from "@/components/home";
 import Profile from "@/components/profile";
 import TicTacToe from "@/components/tic-tac-toe";
 import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUp } from "lucide-react";
 
 type Page = "home" | "profile" | "game";
 
@@ -29,6 +30,15 @@ function getInitialPage(): Page {
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);
@@ -56,15 +66,37 @@ export default function App() {
         </AnimatePresence>
       </div>
       <footer className="mt-auto border-t border-border/20 py-5">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6">
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
           <span className="font-mono text-[11px] text-muted-foreground/50">
             &copy; {new Date().getFullYear()} 陳家盛
           </span>
+          <div className="flex items-center gap-4">
+            <button onClick={() => handleNavigate("home")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Home</button>
+            <button onClick={() => handleNavigate("profile")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Profile</button>
+            <button onClick={() => handleNavigate("game")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Game</button>
+          </div>
           <span className="font-mono text-[11px] text-muted-foreground/30">
-            React + TypeScript &middot; Midterm Project
+            React + TypeScript
           </span>
         </div>
       </footer>
+
+      {/* Scroll-to-top button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-50 flex size-10 items-center justify-center rounded-full border border-border/40 bg-background/80 backdrop-blur-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-background"
+            aria-label="Scroll to top"
+          >
+            <ArrowUp className="size-4" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

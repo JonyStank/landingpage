@@ -121,37 +121,192 @@
   }
 }
 
-@layer utilities {
-  .glow-text {
-    text-shadow: 0 0 20px oklch(0.985 0 0 / 15%);
+/* ────────────────────────────────────────
+   Keyframes
+   ──────────────────────────────────────── */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
   }
+  25% {
+    transform: translateY(-12px) translateX(4px);
+  }
+  50% {
+    transform: translateY(-6px) translateX(-3px);
+  }
+  75% {
+    transform: translateY(-18px) translateX(2px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(2px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes typing {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ────────────────────────────────────────
+   Utility Classes
+   ──────────────────────────────────────── */
+
+@layer utilities {
+  /* Soft, diffused glow text */
+  .glow-text {
+    text-shadow:
+      0 0 12px oklch(0.985 0 0 / 8%),
+      0 0 40px oklch(0.985 0 0 / 6%),
+      0 0 80px oklch(0.985 0 0 / 4%);
+  }
+
+  /* Glassmorphism card */
   .glass-card {
     backdrop-filter: blur(12px);
     background: oklch(1 0 0 / 3%);
   }
+
+  /* Ambient grid background — 80px with subtle opacity */
   .ambient-grid {
     background-image:
-      linear-gradient(oklch(1 0 0 / 3%) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(1 0 0 / 3%) 1px, transparent 1px);
-    background-size: 60px 60px;
+      linear-gradient(oklch(1 0 0 / 2%) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 2%) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+
+  /* Floating particle — combines float animation with gentle opacity */
+  .floating-particle {
+    animation: float 8s ease-in-out infinite;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* Gradient border via background-clip trick */
+  .gradient-border {
+    position: relative;
+    background:
+      linear-gradient(
+        oklch(0.155 0 0),
+        oklch(0.155 0 0)
+      )
+      padding-box,
+      linear-gradient(
+        135deg,
+        oklch(0.488 0.243 264.376),
+        oklch(0.645 0.246 16.439),
+        oklch(0.696 0.17 162.48)
+      )
+      border-box;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+  }
+
+  /* Skeleton shimmer loading state */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      oklch(1 0 0 / 4%) 25%,
+      oklch(1 0 0 / 10%) 50%,
+      oklch(1 0 0 / 4%) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    border-radius: var(--radius);
+  }
+
+  /* Blinking typing cursor */
+  .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: oklch(0.985 0 0);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: typing 1s step-end infinite;
+  }
+
+  /* Noise / grain texture overlay */
+  .noise-overlay {
+    position: relative;
+  }
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+    mix-blend-mode: overlay;
   }
 }
 
+/* ────────────────────────────────────────
+   Scrollbar — 8px, more visible
+   ──────────────────────────────────────── */
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: oklch(1 0 0 / 3%);
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 15%);
-  border-radius: 3px;
+  background: oklch(1 0 0 / 18%);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(1 0 0 / 25%);
+  background: oklch(1 0 0 / 32%);
 }
+
+/* ────────────────────────────────────────
+   Selection
+   ──────────────────────────────────────── */
 
 ::selection {
   background: oklch(1 0 0 / 15%);
   color: oklch(0.985 0 0);
+}
+
+/* ────────────────────────────────────────
+   Focus-visible — dark theme aware
+   ──────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid oklch(0.488 0.243 264.376 / 60%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outline for mouse clicks, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
 }

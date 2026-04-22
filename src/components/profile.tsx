@@ -4,7 +4,20 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, GraduationCap, Code2, TrendingUp, BookOpen, Github, Mail, MapPin, Calendar } from "lucide-react";
+import {
+  User,
+  GraduationCap,
+  Code2,
+  TrendingUp,
+  BookOpen,
+  Github,
+  Mail,
+  MapPin,
+  Calendar,
+  BarChart3,
+  ExternalLink,
+  GitBranch,
+} from "lucide-react";
 
 const skills = [
   { name: "Python", level: 85, description: "Data analysis, automation, algorithmic trading" },
@@ -14,9 +27,33 @@ const skills = [
 ];
 
 const interests = [
-  { name: "Crypto Market Analysis", icon: TrendingUp },
-  { name: "Algorithmic Trading", icon: Code2 },
-  { name: "Financial Analysis", icon: TrendingUp },
+  { name: "Crypto Market Analysis", icon: TrendingUp, description: "Price patterns, on-chain metrics, sentiment analysis" },
+  { name: "Algorithmic Trading", icon: Code2, description: "Strategy development, backtesting, execution" },
+  { name: "Financial Analysis", icon: BarChart3, description: "Fundamental analysis, risk assessment, valuation" },
+];
+
+const projects = [
+  {
+    name: "CryptoTracker",
+    description: "Real-time cryptocurrency portfolio tracker with price alerts and performance analytics.",
+    tech: ["Python", "JavaScript", "API"],
+    link: "#",
+    status: "active" as const,
+  },
+  {
+    name: "AlgoTrade Bot",
+    description: "Automated trading bot implementing momentum and mean-reversion strategies.",
+    tech: ["Python", "Pandas", "CCXT"],
+    link: "#",
+    status: "development" as const,
+  },
+  {
+    name: "FinDash",
+    description: "Interactive financial dashboard with candlestick charts and technical indicators.",
+    tech: ["TypeScript", "React", "Recharts"],
+    link: "#",
+    status: "active" as const,
+  },
 ];
 
 const timeline = [
@@ -24,6 +61,17 @@ const timeline = [
   { year: "2023", event: "Started exploring crypto & algorithmic trading" },
   { year: "2024", event: "Built first trading bot prototype" },
   { year: "2025", event: "3rd Year — React + TypeScript midterm project" },
+];
+
+// GitHub-style contribution grid: 7 rows × 15 columns, fixed random seed
+const contributionData = [
+  [0.3, 0.1, 0.5, 0.7, 0.1, 0.3, 0.9, 0.5, 0.1, 0.3, 0.7, 0.5, 0.1, 0.3, 0.5],
+  [0.1, 0.5, 0.3, 0.9, 0.7, 0.1, 0.5, 0.3, 0.7, 0.9, 0.1, 0.3, 0.5, 0.7, 0.3],
+  [0.5, 0.3, 0.1, 0.3, 0.5, 0.9, 0.7, 0.1, 0.5, 0.3, 0.7, 0.9, 0.3, 0.1, 0.7],
+  [0.7, 0.9, 0.3, 0.1, 0.3, 0.5, 0.1, 0.7, 0.9, 0.5, 0.3, 0.1, 0.7, 0.5, 0.9],
+  [0.1, 0.7, 0.5, 0.5, 0.9, 0.7, 0.3, 0.5, 0.3, 0.1, 0.5, 0.7, 0.9, 0.3, 0.1],
+  [0.3, 0.5, 0.7, 0.9, 0.1, 0.3, 0.5, 0.9, 0.7, 0.5, 0.1, 0.5, 0.3, 0.9, 0.5],
+  [0.5, 0.1, 0.9, 0.3, 0.7, 0.5, 0.9, 0.3, 0.1, 0.7, 0.9, 0.3, 0.1, 0.7, 0.3],
 ];
 
 const container = {
@@ -39,6 +87,26 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
+function StatusBadge({ status }: { status: "active" | "development" }) {
+  return (
+    <Badge
+      variant="outline"
+      className={`gap-1.5 text-[10px] font-medium ${
+        status === "active"
+          ? "border-emerald-500/30 text-emerald-400"
+          : "border-amber-500/30 text-amber-400"
+      }`}
+    >
+      <span
+        className={`size-1.5 rounded-full ${
+          status === "active" ? "bg-emerald-400" : "bg-amber-400"
+        }`}
+      />
+      {status === "active" ? "Active" : "In Development"}
+    </Badge>
+  );
+}
+
 export default function Profile() {
   return (
     <main className="relative flex flex-1 items-start justify-center px-6 py-16">
@@ -49,6 +117,7 @@ export default function Profile() {
         animate="show"
         className="relative w-full max-w-2xl space-y-5"
       >
+        {/* Profile Card */}
         <motion.div variants={item}>
           <Card className="border-border/40 bg-card/40 overflow-hidden">
             <div className="h-20 bg-gradient-to-r from-secondary/80 via-secondary/40 to-secondary/80" />
@@ -100,6 +169,7 @@ export default function Profile() {
           </Card>
         </motion.div>
 
+        {/* Technical Skills Card */}
         <motion.div variants={item}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
@@ -136,6 +206,7 @@ export default function Profile() {
           </Card>
         </motion.div>
 
+        {/* Interests Card — Enhanced with gradient left-border and descriptions */}
         <motion.div variants={item}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
@@ -145,19 +216,28 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {interests.map((interest, idx) => (
                   <motion.div
                     key={interest.name}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6 + idx * 0.1, duration: 0.3 }}
-                    className="group flex items-center gap-3 rounded-lg border border-border/30 bg-secondary/10 px-3 py-2.5 transition-all duration-300 hover:border-border/60 hover:bg-secondary/20"
+                    className="group relative flex items-start gap-3 rounded-lg border border-border/30 bg-secondary/10 px-3 py-3 transition-all duration-300 hover:border-border/60 hover:bg-secondary/20"
                   >
-                    <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary/50 text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
-                      <interest.icon className="size-3.5" />
+                    {/* Gradient left-border accent */}
+                    <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-gradient-to-b from-foreground/20 via-foreground/50 to-foreground/20 transition-all duration-300 group-hover:from-foreground/40 group-hover:via-foreground/80 group-hover:to-foreground/40" />
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground transition-colors duration-300 group-hover:bg-foreground/10 group-hover:text-foreground">
+                      <interest.icon className="size-4" />
                     </div>
-                    <span className="text-xs font-medium text-foreground/80">{interest.name}</span>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-xs font-medium text-foreground/90 leading-tight">
+                        {interest.name}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/60 leading-snug">
+                        {interest.description}
+                      </span>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -165,6 +245,55 @@ export default function Profile() {
           </Card>
         </motion.div>
 
+        {/* Projects Card */}
+        <motion.div variants={item}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <GitBranch className="size-4 text-muted-foreground" />
+                Projects
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {projects.map((project, idx) => (
+                <motion.div
+                  key={project.name}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 + idx * 0.1, duration: 0.3 }}
+                  className="group rounded-lg border border-border/30 bg-secondary/5 p-4 transition-all duration-300 hover:border-border/60 hover:bg-secondary/10"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-foreground/90">{project.name}</h4>
+                        <StatusBadge status={project.status} />
+                      </div>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                        {project.description}
+                      </p>
+                    </div>
+                    <a
+                      href={project.link}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border/30 text-muted-foreground/50 transition-all duration-200 hover:border-border/60 hover:text-foreground"
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {project.tech.map((t) => (
+                      <Badge key={t} variant="outline" className="text-[10px] font-normal px-1.5 py-0">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Timeline Card — with GitHub-style Contribution Grid */}
         <motion.div variants={item}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
@@ -173,7 +302,47 @@ export default function Profile() {
                 Timeline
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              {/* GitHub-style Contribution Grid */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/50">
+                  Activity
+                </p>
+                <div className="flex flex-col gap-[3px]">
+                  {contributionData.map((row, rowIdx) => (
+                    <div key={rowIdx} className="flex gap-[3px]">
+                      {row.map((level, colIdx) => (
+                        <motion.div
+                          key={`${rowIdx}-${colIdx}`}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{
+                            delay: 1.0 + (rowIdx * 15 + colIdx) * 0.003,
+                            duration: 0.15,
+                          }}
+                          className="size-[10px] rounded-[2px] bg-foreground"
+                          style={{ opacity: level }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[10px] text-muted-foreground/40">Less</span>
+                  {[0.1, 0.3, 0.5, 0.7, 0.9].map((l) => (
+                    <div
+                      key={l}
+                      className="size-[10px] rounded-[2px] bg-foreground"
+                      style={{ opacity: l }}
+                    />
+                  ))}
+                  <span className="text-[10px] text-muted-foreground/40">More</span>
+                </div>
+              </div>
+
+              <Separator className="bg-border/40" />
+
+              {/* Timeline entries */}
               <div className="relative space-y-0">
                 {timeline.map((entry, idx) => (
                   <div key={entry.year} className="flex gap-4">
