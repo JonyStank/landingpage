@@ -221,6 +221,7 @@ export default function TicTacToe() {
     { player: CellValue; index: number }[]
   >([]);
   const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [winStreak, setWinStreak] = useState(0);
   const [selectedCell, setSelectedCell] = useState<number | null>(4);
   const [gameMode, setGameMode] = useState<GameMode>("2p");
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
@@ -280,7 +281,8 @@ export default function TicTacToe() {
   const finishGame = useCallback(
     (
       winResult: { winner: CellValue; line: number[] } | null,
-      isDraw: boolean
+      isDraw: boolean,
+      currentWinner?: CellValue
     ) => {
       if (winResult) {
         if (soundEnabled) playWinSound();
@@ -290,10 +292,12 @@ export default function TicTacToe() {
           [winResult.winner!]: prev[winResult.winner as "X" | "O"] + 1,
         }));
         setGamesPlayed((prev) => prev + 1);
+        setWinStreak((prev) => (currentWinner === "X" ? prev + 1 : 0));
       } else if (isDraw) {
         if (soundEnabled) playDrawSound();
         setScore((prev) => ({ ...prev, draw: prev.draw + 1 }));
         setGamesPlayed((prev) => prev + 1);
+        setWinStreak(0);
       }
     },
     [soundEnabled]
@@ -321,7 +325,7 @@ export default function TicTacToe() {
             setMoveHistory(newHistory);
             if (soundEnabled) playMoveSound();
             if (winResult || isDraw) {
-              finishGame(winResult, isDraw);
+              finishGame(winResult, isDraw, "O");
             }
           }, 0);
 
@@ -354,7 +358,7 @@ export default function TicTacToe() {
       if (soundEnabled) playPlaceSound();
 
       if (winResult || isDraw) {
-        finishGame(winResult, isDraw);
+        finishGame(winResult, isDraw, currentPlayer);
       } else {
         const nextPlayer = currentPlayer === "X" ? "O" : "X";
         setCurrentPlayer(nextPlayer);
@@ -445,6 +449,7 @@ export default function TicTacToe() {
     handleReset();
     setScore({ X: 0, O: 0, draw: 0 });
     setGamesPlayed(0);
+    setWinStreak(0);
   }, [handleReset]);
 
   useEffect(() => {
@@ -703,6 +708,14 @@ export default function TicTacToe() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ── Win Streak ────────────────────────────────────────────── */}
+        {winStreak > 0 && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground/60">
+            <span>Win Streak</span>
+            <span className="text-amber-500/80 font-bold">{winStreak}</span>
+          </div>
+        )}
 
         {/* ── Game Board ─────────────────────────────────────────────── */}
         <div className="relative">

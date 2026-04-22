@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Home, User, Gamepad2, Sun, Moon } from "lucide-react";
+import { Home, User, Gamepad2, Sun, Moon, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Page = "home" | "profile" | "game";
@@ -76,7 +76,8 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
             </AnimatePresence>
           </button>
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg border border-border/30 bg-secondary/20 p-0.5">
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border/30 bg-secondary/20 p-0.5">
           {navItems.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -100,6 +101,14 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }))}
+            className="flex size-7 items-center justify-center rounded-full border border-border/30 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary/20"
+            aria-label="Keyboard shortcuts (?)"
+          >
+            <HelpCircle className="size-3.5" />
+          </button>
         </div>
       </nav>
       <div

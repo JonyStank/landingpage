@@ -7,6 +7,8 @@ import Profile from "@/components/profile";
 import TicTacToe from "@/components/tic-tac-toe";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp } from "lucide-react";
+import ShortcutsOverlay from "@/components/shortcuts-overlay";
+import LoadingSkeleton from "@/components/loading-skeleton";
 
 type Page = "home" | "profile" | "game";
 
@@ -31,6 +33,7 @@ function getInitialPage(): Page {
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,6 +43,20 @@ export default function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      }
+      if (e.key === "Escape") setShowShortcuts(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);
     window.location.hash = page;
@@ -47,6 +64,7 @@ export default function App() {
   };
 
   const PageComponent = pageComponents[currentPage];
+  const isLoading = false;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -61,7 +79,11 @@ export default function App() {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex min-h-[calc(100vh-3.5rem)]"
           >
+            {isLoading ? (
+            <LoadingSkeleton />
+          ) : (
             <PageComponent onNavigate={handleNavigate} />
+          )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -95,6 +117,12 @@ export default function App() {
           >
             <ArrowUp className="size-4" />
           </motion.button>
+        )}
+      </AnimatePresence>
+      {/* Keyboard shortcuts overlay */}
+      <AnimatePresence>
+        {showShortcuts && (
+          <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
       </AnimatePresence>
     </div>

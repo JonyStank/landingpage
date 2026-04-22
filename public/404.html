@@ -1,21 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Redirecting...</title>
-    <script>
-      var pathSegmentsToKeep = 1;
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
-    </script>
-  </head>
-  <body>
-    Redirecting...
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>404 — Page Not Found</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: oklch(0.1 0 0);
+      color: oklch(0.985 0 0);
+      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(oklch(1 0 0 / 2%) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(1 0 0 / 2%) 1px, transparent 1px);
+      background-size: 80px 80px;
+      pointer-events: none;
+    }
+    /* Glow orb */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, oklch(0.985 0 0 / 3%) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      animation: fadeIn 0.6s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .logo {
+      font-family: monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: oklch(0.6 0 0);
+      margin-bottom: 2rem;
+    }
+    .code404 {
+      font-size: 8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      background: linear-gradient(135deg, oklch(0.985 0 0 / 80%), oklch(0.985 0 0 / 20%));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 60px oklch(0.985 0 0 / 10%);
+      margin-bottom: 1rem;
+    }
+    .title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: oklch(0.6 0 0);
+      margin-bottom: 0.5rem;
+    }
+    .desc {
+      font-size: 0.875rem;
+      color: oklch(0.5 0 0);
+      margin-bottom: 2.5rem;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.5rem;
+      background: oklch(0.985 0 0);
+      color: oklch(0.1 0 0);
+      border: none;
+      border-radius: 0.5rem;
+      font-family: system-ui, sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .footer {
+      position: absolute;
+      bottom: 2rem;
+      font-family: monospace;
+      font-size: 0.6875rem;
+      color: oklch(0.35 0 0);
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <div class="logo">&lt;CJS /&gt;</div>
+    <div class="code404">404</div>
+    <div class="title">Page Not Found</div>
+    <p class="desc">
+      The page you are looking for doesn't exist or has been moved.
+    </p>
+    <a href="./#home" class="btn">
+      &larr; Back to Home
+    </a>
+  </div>
+  <div class="footer">
+    &copy; 2026 &#38504;&#23478;&#30427; &middot; React + TypeScript
+  </div>
+  <script>
+    setTimeout(function() {
+      window.location.replace('./#home');
+    }, 8000);
+  </script>
+</body>
 </html>
