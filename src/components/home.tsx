@@ -15,12 +15,15 @@ import {
   Copy,
   Check,
   GitCommit,
+  GitCommitHorizontal,
   GitPullRequest,
   Clock,
   User,
   Gamepad2,
   BookOpen,
   Sparkles,
+  FileText,
+  Coffee,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -126,6 +129,66 @@ const learningItems = [
   { icon: Sparkles, title: "React Advanced Patterns", progress: 70, color: "from-cyan-500 to-teal-400" },
   { icon: Layers, title: "Next.js App Router", progress: 45, color: "from-emerald-500 to-teal-400" },
   { icon: Terminal, title: "Rust Basics", progress: 25, color: "from-amber-500 to-orange-400" },
+];
+
+const techStackItems = [
+  { name: "React", color: "text-cyan-400" },
+  { name: "TypeScript", color: "text-teal-400" },
+  { name: "Next.js", color: "text-foreground/80" },
+  { name: "Tailwind", color: "text-cyan-500" },
+  { name: "Framer Motion", color: "text-teal-400" },
+  { name: "shadcn/ui", color: "text-emerald-400" },
+  { name: "Node.js", color: "text-emerald-400" },
+  { name: "Git", color: "text-amber-400/80" },
+  { name: "VS Code", color: "text-cyan-400/80" },
+  { name: "Prisma", color: "text-teal-400" },
+];
+
+// Deterministic mini contribution grid: 7 rows × 12 columns
+const miniContribData = [
+  [0, 1, 3, 2, 0, 4, 1, 0, 2, 3, 1, 0],
+  [1, 2, 0, 4, 3, 0, 2, 1, 3, 0, 4, 2],
+  [3, 0, 2, 1, 4, 2, 0, 3, 1, 2, 0, 4],
+  [0, 4, 1, 3, 2, 1, 3, 0, 4, 1, 2, 3],
+  [2, 1, 4, 0, 3, 4, 1, 2, 0, 3, 4, 1],
+  [4, 3, 0, 2, 1, 3, 4, 1, 3, 0, 2, 4],
+  [1, 2, 3, 1, 0, 2, 3, 4, 2, 1, 3, 0],
+];
+
+const miniContribColors = [
+  "oklch(0 0 0 / 4%)",
+  "oklch(0.65 0.17 162 / 25%)",
+  "oklch(0.65 0.17 162 / 50%)",
+  "oklch(0.65 0.17 162 / 75%)",
+  "oklch(0.65 0.17 162 / 100%)",
+];
+
+const counterItems = [
+  { label: "Lines of Code", value: 12847, icon: Code2 },
+  { label: "Commits", value: 342, icon: GitCommit },
+  { label: "Projects", value: 8, icon: Layers },
+  { label: "Coffee", value: 1024, icon: Coffee, emoji: "☕" },
+];
+
+const blogPosts = [
+  {
+    title: "Building a Tic-Tac-Toe AI with Minimax",
+    excerpt: "A deep dive into implementing the Minimax algorithm for an unbeatable AI opponent in React.",
+    date: "Jan 15",
+    readTime: "5 min read",
+  },
+  {
+    title: "My Journey into Algorithmic Trading",
+    excerpt: "From curiosity to building automated trading bots with Python and real market data.",
+    date: "Dec 28",
+    readTime: "8 min read",
+  },
+  {
+    title: "Why TypeScript Changed How I Code",
+    excerpt: "How strict typing caught bugs I never knew existed and improved my development workflow.",
+    date: "Nov 10",
+    readTime: "4 min read",
+  },
 ];
 
 const container = {
@@ -682,6 +745,63 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
       </motion.div>
 
+      {/* GitHub Activity Mini Graph */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.68, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-4 w-full max-w-3xl"
+      >
+        <div className="rounded-lg border border-border/30 bg-card/20 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <GitCommitHorizontal className="size-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Contributions</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Last 12 weeks</span>
+          </div>
+          <div className="flex flex-col gap-[3px] items-start">
+            {miniContribData.map((row, rowIdx) => (
+              <motion.div
+                key={rowIdx}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 + rowIdx * 0.06, duration: 0.3 }}
+                className="flex gap-[3px]"
+              >
+                {row.map((level, colIdx) => (
+                  <motion.div
+                    key={`${rowIdx}-${colIdx}`}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      delay: 0.85 + (rowIdx * 12 + colIdx) * 0.004,
+                      duration: 0.15,
+                    }}
+                    className="contribution-cell"
+                    style={{ backgroundColor: miniContribColors[level] }}
+                  />
+                ))}
+              </motion.div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-emerald-400/70 font-medium">247 contributions</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-muted-foreground/40">Less</span>
+              {miniContribColors.slice(1).map((color, i) => (
+                <div
+                  key={i}
+                  className="contribution-cell"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+              <span className="text-[9px] text-muted-foreground/40">More</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
       {/* Feature Cards with icon glow and complexity badges */}
@@ -723,6 +843,110 @@ export default function Home({ onNavigate }: HomeProps) {
             </div>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Tech Stack Marquee */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-8 w-full max-w-3xl overflow-hidden"
+      >
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-background to-transparent" />
+        <div className="marquee-track py-2">
+          {[...techStackItems, ...techStackItems].map((item, idx) => (
+            <div
+              key={`${item.name}-${idx}`}
+              className="flex shrink-0 items-center gap-2 px-4"
+            >
+              <div className={`flex size-7 items-center justify-center rounded-full border border-border/30 bg-secondary/20 text-[10px] font-bold ${item.color}`}>
+                {item.name.slice(0, 2)}
+              </div>
+              <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">{item.name}</span>
+              <span className="size-1 rounded-full bg-border/40" />
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      <Separator className="mb-8 w-full max-w-3xl opacity-30" />
+
+      {/* Animated Counter Section — My Numbers */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.85, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-8 w-full max-w-3xl"
+      >
+        <div className="mb-4 text-center">
+          <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 font-medium">
+            My Numbers
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {counterItems.map((counter, idx) => (
+            <motion.div
+              key={counter.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 + idx * 0.12, duration: 0.4 }}
+              className="flex flex-col items-center gap-2 rounded-lg border border-border/30 bg-card/20 p-4 transition-all duration-300 hover:border-border/60 hover:bg-card/30 hover:-translate-y-0.5"
+            >
+              <counter.icon className="size-4 text-emerald-400/60" />
+              <span className="text-3xl font-bold text-foreground tabular-nums">
+                {counter.value.toLocaleString()}
+                {counter.emoji ? <span className="ml-1 text-xl">{counter.emoji}</span> : null}
+              </span>
+              <div className="h-0.5 w-8 rounded-full bg-gradient-to-r from-emerald-500/40 to-teal-400/40" />
+              <span className="text-[11px] text-muted-foreground/60">{counter.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      <Separator className="mb-8 w-full max-w-3xl opacity-30" />
+
+      {/* Blog Preview Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.88, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-8 w-full max-w-3xl"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="size-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Latest Blog Posts</span>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {blogPosts.map((post, idx) => (
+            <motion.div
+              key={post.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.95 + idx * 0.1, duration: 0.4 }}
+              className="group rounded-lg border border-border/30 bg-card/20 p-4 transition-all duration-300 hover:border-emerald-500/20 hover:bg-card/40 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/5 cursor-pointer"
+            >
+              <h4 className="text-sm font-medium text-foreground/90 leading-snug group-hover:text-emerald-400/90 transition-colors duration-300">
+                {post.title}
+              </h4>
+              <p className="mt-1.5 text-xs text-muted-foreground/60 leading-relaxed line-clamp-2">
+                {post.excerpt}
+              </p>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground/40">{post.date}</span>
+                  <span className="size-0.5 rounded-full bg-border/40" />
+                  <span className="text-[10px] text-muted-foreground/40">{post.readTime}</span>
+                </div>
+                <span className="flex items-center gap-1 text-[11px] text-emerald-400/70 transition-transform duration-200 group-hover:translate-x-0.5">
+                  Read
+                  <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
 
       <Separator className="mb-8 w-full max-w-3xl opacity-30" />

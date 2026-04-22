@@ -37,6 +37,9 @@ import {
   Undo2Icon,
   Target,
   Hash,
+  Award,
+  Moon,
+  Handshake,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -93,6 +96,20 @@ function playWinSound(vol: number) {
   setTimeout(() => playTone(784, 0.25, 0.07, "sine", vol), 200);
 }
 
+function playVictoryFanfare(vol: number) {
+  playTone(523, 0.12, 0.08, "sine", vol);
+  setTimeout(() => playTone(659, 0.12, 0.08, "sine", vol), 100);
+  setTimeout(() => playTone(784, 0.12, 0.08, "sine", vol), 200);
+  setTimeout(() => playTone(1047, 0.18, 0.08, "sine", vol), 350);
+  setTimeout(() => playTone(1319, 0.3, 0.09, "sine", vol), 500);
+}
+
+function playGameOverSound(vol: number) {
+  playTone(400, 0.2, 0.06, "sine", vol);
+  setTimeout(() => playTone(350, 0.2, 0.06, "sine", vol), 150);
+  setTimeout(() => playTone(300, 0.35, 0.06, "sine", vol), 300);
+}
+
 function playDrawSound(vol: number) {
   playTone(400, 0.2, 0.06, "sine", vol);
   setTimeout(() => playTone(350, 0.3, 0.06, "sine", vol), 150);
@@ -100,6 +117,10 @@ function playDrawSound(vol: number) {
 
 function playUndoSound(vol: number) {
   playTone(500, 0.06, 0.04, "sine", vol);
+}
+
+function playClickSound(vol: number) {
+  playTone(400, 0.04, 0.03, "sine", vol);
 }
 
 // ────────────────────────────────────────
@@ -146,6 +167,13 @@ interface GameHistoryEntry {
   duration: number;
 }
 
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
 // ────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────
@@ -156,6 +184,17 @@ const DEFAULT_SETTINGS: GameSettings = {
   showMoveNumbers: false,
   soundVolume: 80,
 };
+
+const ACHIEVEMENTS: Achievement[] = [
+  { id: "first_blood", title: "First Blood", description: "Win your first game", icon: "🩸" },
+  { id: "hat_trick", title: "Hat Trick", description: "Win 3 games in a row", icon: "🎩" },
+  { id: "unbeatable", title: "Unbeatable", description: "Win 5 games in a row", icon: "👑" },
+  { id: "draw_master", title: "Draw Master", description: "Get 3 draws in a row", icon: "🤝" },
+  { id: "speed_demon", title: "Speed Demon", description: "Win in 5 or fewer moves", icon: "⚡" },
+  { id: "marathon", title: "Marathon", description: "Play 10 games total", icon: "🏃" },
+  { id: "perfect_game", title: "Perfect Game", description: "Win without opponent center (2P)", icon: "💎" },
+  { id: "night_owl", title: "Night Owl", description: "Play a game between 11PM-5AM", icon: "🦉" },
+];
 
 const WINNING_LINES = [
   [0, 1, 2],
@@ -365,8 +404,11 @@ function getAIMove(board: Board, difficulty: Difficulty): number {
     case "easy":
       return getRandomMove(board);
 
-    case "medium":
-      if (Math.random() < 0.5) return getBestMove(board);
+    case "medium": {
+      // Smart Medium: always take center first, always block, always win, 30% optimal else random
+      // 1. Take center if available (first move)
+      if (!board[4]) return 4;
+      // 2. Always take winning moves
       for (let i = 0; i < 9; i++) {
         if (!board[i]) {
           board[i] = "O";
@@ -377,20 +419,21 @@ function getAIMove(board: Board, difficulty: Difficulty): number {
           board[i] = null;
         }
       }
-      const emptyCells = board.filter((c) => c === null).length;
-      if (emptyCells <= 4) {
-        for (let i = 0; i < 9; i++) {
-          if (!board[i]) {
-            board[i] = "X";
-            if (checkWinner(board)?.winner === "X") {
-              board[i] = null;
-              return i;
-            }
+      // 3. Always block opponent wins
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = "X";
+          if (checkWinner(board)?.winner === "X") {
             board[i] = null;
+            return i;
           }
+          board[i] = null;
         }
       }
+      // 4. 30% chance of optimal, otherwise random
+      if (Math.random() < 0.3) return getBestMove(board);
       return getRandomMove(board);
+    }
 
     case "hard":
       return getBestMove(board);
@@ -431,6 +474,89 @@ function MiniSparkline({ values, color }: { values: number[]; color: string }) {
 }
 
 // ────────────────────────────────────────
+// Achievement Toast Component
+// ────────────────────────────────────────
+
+function AchievementToast({
+  achievement,
+  onDismiss,
+}: {
+  achievement: Achievement;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 3000);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
+  return (
+    <motion.div
+      initial={{ x: 300, opacity: 0, scale: 0.95 }}
+      animate={{ x: 0, opacity: 1, scale: 1 }}
+      exit={{ x: 300, opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-card/95 backdrop-blur-xl px-4 py-3 shadow-lg shadow-amber-500/5"
+    >
+      <span className="text-2xl">{achievement.icon}</span>
+      <div className="flex flex-col">
+        <span className="text-xs font-bold text-amber-500">{achievement.title}</span>
+        <span className="text-[10px] text-muted-foreground/60">{achievement.description}</span>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="ml-2 text-muted-foreground/40 hover:text-muted-foreground/80 transition-colors"
+      >
+        ×
+      </button>
+    </motion.div>
+  );
+}
+
+// ────────────────────────────────────────
+// Game Recap Modal - Mini Replay Grid
+// ────────────────────────────────────────
+
+function MiniReplayGrid({
+  moves,
+  currentStep,
+  theme,
+}: {
+  moves: MoveEntry[];
+  currentStep: number;
+  theme: BoardTheme;
+}) {
+  const replayBoard: CellValue[] = Array(9).fill(null);
+  for (let i = 0; i < currentStep && i < moves.length; i++) {
+    replayBoard[moves[i].index] = moves[i].player;
+  }
+  const isLast = currentStep > 0 && currentStep <= moves.length;
+  const highlightCell = isLast ? moves[currentStep - 1].index : -1;
+
+  return (
+    <div className="grid grid-cols-3 gap-1 w-28 mx-auto">
+      {replayBoard.map((cell, idx) => (
+        <div
+          key={idx}
+          className={`flex size-9 items-center justify-center rounded-md border text-base font-bold transition-all duration-200 ${
+            theme === "neon"
+              ? "border-cyan-500/20 bg-black/40"
+              : theme === "classic"
+                ? "border-foreground/20 bg-card/40"
+                : "border-border/20 bg-card/20"
+          } ${
+            highlightCell === idx
+              ? "border-amber-500/40 bg-amber-500/10 scale-110"
+              : ""
+          } ${cell ? (theme === "neon" ? (cell === "X" ? "text-cyan-400" : "text-fuchsia-400") : "") : ""}`}
+        >
+          {cell}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────
 // Main Component
 // ────────────────────────────────────────
 
@@ -442,6 +568,7 @@ export default function TicTacToe() {
   const [moveHistory, setMoveHistory] = useState<MoveEntry[]>([]);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [winStreak, setWinStreak] = useState(0);
+  const [drawStreak, setDrawStreak] = useState(0);
   const [selectedCell, setSelectedCell] = useState<number | null>(4);
   const [gameMode, setGameMode] = useState<GameMode>("2p");
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
@@ -468,6 +595,27 @@ export default function TicTacToe() {
     time: number;
   } | null>(null);
 
+  // Achievement system
+  const [unlockedAchievements, setUnlockedAchievements] = useState<Set<string>>(new Set());
+  const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
+
+  // Game Recap Modal
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [recapHistory, setRecapHistory] = useState<MoveEntry[]>([]);
+  const [replayStep, setReplayStep] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [recapResult, setRecapResult] = useState<{
+    winner: CellValue | null;
+    moves: number;
+    time: number;
+    mode: GameMode;
+    difficulty: Difficulty;
+  } | null>(null);
+  const replayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Touch feedback
+  const [touchDownCell, setTouchDownCell] = useState<number | null>(null);
+
   const boardRef = useRef<HTMLDivElement>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsLoadedRef = useRef(false);
@@ -493,6 +641,7 @@ export default function TicTacToe() {
   useEffect(() => {
     return () => {
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+      if (replayTimerRef.current) clearInterval(replayTimerRef.current);
     };
   }, []);
 
@@ -515,6 +664,25 @@ export default function TicTacToe() {
     }
   }, [status, winLine]);
 
+  // Replay timer for recap
+  useEffect(() => {
+    if (replayPlaying && recapHistory.length > 0) {
+      replayTimerRef.current = setInterval(() => {
+        setReplayStep((prev) => {
+          if (prev >= recapHistory.length) {
+            setReplayPlaying(false);
+            if (replayTimerRef.current) clearInterval(replayTimerRef.current);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 500);
+      return () => {
+        if (replayTimerRef.current) clearInterval(replayTimerRef.current);
+      };
+    }
+  }, [replayPlaying, recapHistory.length]);
+
   const toggleTheme = useCallback(() => {
     const isDark = document.documentElement.classList.contains("dark");
     if (isDark) {
@@ -527,6 +695,10 @@ export default function TicTacToe() {
     window.dispatchEvent(new CustomEvent("theme-changed"));
   }, []);
 
+  const playUIClick = useCallback(() => {
+    if (soundEnabled) playClickSound(vol);
+  }, [soundEnabled, vol]);
+
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
@@ -534,6 +706,94 @@ export default function TicTacToe() {
       return next;
     });
   }, []);
+
+  const showAchievement = useCallback((id: string) => {
+    setUnlockedAchievements((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      const ach = ACHIEVEMENTS.find((a) => a.id === id);
+      if (ach) {
+        setAchievementToast(ach);
+        setTimeout(() => setAchievementToast(null), 3200);
+      }
+      return next;
+    });
+  }, []);
+
+  const checkAchievements = useCallback(
+    (
+      winResult: { winner: CellValue; line: number[] } | null,
+      isDraw: boolean,
+      moveCount: number,
+      currentWinner?: CellValue
+    ) => {
+      // First Blood — Win first game
+      if (winResult && score.X + score.O === 0 && currentWinner === "X") {
+        showAchievement("first_blood");
+      }
+      if (winResult && currentWinner === "O" && score.X + score.O === 0) {
+        showAchievement("first_blood");
+      }
+
+      // Hat Trick — 3 wins in a row (X)
+      if (winResult && currentWinner === "X") {
+        const newStreak = winStreak + 1;
+        if (newStreak >= 3 && newStreak < 5) {
+          showAchievement("hat_trick");
+        }
+        if (newStreak >= 5) {
+          showAchievement("unbeatable");
+        }
+      }
+
+      // Draw Master — 3 draws in a row
+      if (isDraw) {
+        const newDrawStreak = drawStreak + 1;
+        if (newDrawStreak >= 3) {
+          showAchievement("draw_master");
+        }
+      }
+
+      // Speed Demon — Win in ≤5 moves
+      if (winResult && moveCount <= 5) {
+        showAchievement("speed_demon");
+      }
+
+      // Marathon — 10 games total
+      const newGamesPlayed = gamesPlayed + 1;
+      if (newGamesPlayed >= 10 && gamesPlayed < 10) {
+        showAchievement("marathon");
+      }
+
+      // Perfect Game — Win without opponent placing center in 2P
+      if (winResult && gameMode === "2p" && moveCount > 0) {
+        const loser = currentWinner === "X" ? "O" : "X";
+        const opponentCenter = moveHistory.some(
+          (m) => m.player === loser && m.index === 4
+        );
+        if (!opponentCenter) {
+          showAchievement("perfect_game");
+        }
+      }
+
+      // Night Owl — play between 11PM and 5AM
+      const hour = new Date().getHours();
+      if (hour >= 23 || hour < 5) {
+        showAchievement("night_owl");
+      }
+    },
+    [
+      score.X,
+      score.O,
+      winStreak,
+      drawStreak,
+      gamesPlayed,
+      gameMode,
+      moveHistory,
+      showAchievement,
+    ]
+  );
 
   const applyMove = useCallback(
     (
@@ -581,8 +841,20 @@ export default function TicTacToe() {
         }
       }
 
+      // Check achievements
+      checkAchievements(winResult, isDraw, moveCount ?? moveHistory.length, currentWinner);
+
       if (winResult) {
-        if (soundEnabled) playWinSound(vol);
+        // Victory Fanfare for Hard difficulty wins
+        if (gameMode === "ai" && difficulty === "hard") {
+          if (soundEnabled) playVictoryFanfare(vol);
+        } else {
+          if (soundEnabled) playWinSound(vol);
+        }
+        // Game Over sound for AI losses
+        if (gameMode === "ai" && currentWinner === "O") {
+          if (soundEnabled) playGameOverSound(vol);
+        }
         setWinLine(winResult.line);
         setScore((prev) => ({
           ...prev,
@@ -590,6 +862,7 @@ export default function TicTacToe() {
         }));
         setGamesPlayed((prev) => prev + 1);
         setWinStreak((prev) => (currentWinner === "X" ? prev + 1 : 0));
+        setDrawStreak(0);
         if (moveCount !== undefined) {
           setFastestWin((prev) => {
             if (prev === null || moveCount < prev) return moveCount;
@@ -620,6 +893,7 @@ export default function TicTacToe() {
         setScore((prev) => ({ ...prev, draw: prev.draw + 1 }));
         setGamesPlayed((prev) => prev + 1);
         setWinStreak(0);
+        setDrawStreak((prev) => prev + 1);
         setLastGameResult({
           winner: null,
           moves: moveCount ?? moveHistory.length,
@@ -644,7 +918,9 @@ export default function TicTacToe() {
       longestGame,
       gameStartTime,
       gameMode,
+      difficulty,
       moveHistory.length,
+      checkAchievements,
     ]
   );
 
@@ -816,16 +1092,41 @@ export default function TicTacToe() {
     setLastGameResult(null);
   }, []);
 
+  const handleResetWithRecap = useCallback(() => {
+    if (status !== "playing" && lastGameResult) {
+      setRecapHistory([...moveHistory]);
+      setRecapResult({
+        winner: lastGameResult.winner,
+        moves: lastGameResult.moves,
+        time: lastGameResult.time,
+        mode: gameMode,
+        difficulty,
+      });
+      setReplayStep(0);
+      setReplayPlaying(false);
+      setRecapOpen(true);
+    }
+    handleReset();
+  }, [status, lastGameResult, moveHistory, gameMode, difficulty, handleReset]);
+
+  const handleCloseRecap = useCallback(() => {
+    setRecapOpen(false);
+    setReplayPlaying(false);
+    if (replayTimerRef.current) clearInterval(replayTimerRef.current);
+  }, []);
+
   const handleFullReset = useCallback(() => {
     handleReset();
     setScore({ X: 0, O: 0, draw: 0 });
     setGamesPlayed(0);
     setWinStreak(0);
+    setDrawStreak(0);
     setTotalMoves(0);
     setFastestWin(null);
     setLongestGame(0);
     setGameHistory([]);
     setGameCounter(0);
+    setUnlockedAchievements(new Set());
   }, [handleReset]);
 
   useEffect(() => {
@@ -844,7 +1145,7 @@ export default function TicTacToe() {
 
       if (e.key.toLowerCase() === "n" && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        handleReset();
+        handleResetWithRecap();
         return;
       }
 
@@ -906,7 +1207,7 @@ export default function TicTacToe() {
       selectedCell,
       handleCellClick,
       handleUndo,
-      handleReset,
+      handleResetWithRecap,
       toggleTheme,
     ]
   );
@@ -938,7 +1239,7 @@ export default function TicTacToe() {
   const avgMoves =
     gamesPlayed > 0 ? (totalMoves / gamesPlayed).toFixed(1) : "0.0";
 
-  // Move number map: for each cell index, which move number was it
+  // Move number map
   const moveNumberMap = useRef<Map<number, number>>(new Map());
   moveNumberMap.current = new Map();
   moveHistory.forEach((m, i) => {
@@ -952,6 +1253,13 @@ export default function TicTacToe() {
       : settings.boardTheme === "classic"
         ? "board-classic"
         : "";
+
+  const boardShadowClass =
+    settings.boardTheme === "neon"
+      ? "board-shadow-neon"
+      : settings.boardTheme === "classic"
+        ? "board-shadow-classic"
+        : "board-shadow-minimal";
 
   // Win cell extra class per theme
   const winCellThemeClass = settings.boardTheme === "neon"
@@ -971,10 +1279,14 @@ export default function TicTacToe() {
     return cell === "X" ? "text-foreground" : "text-muted-foreground/80";
   };
 
-  // ────────────────────────────────────────
-  // Get winner for overlay text
-  // ────────────────────────────────────────
+  // Win line color per theme
+  const getWinLineColor = () => {
+    if (settings.boardTheme === "neon") return "oklch(0.7 0.22 200)";
+    if (settings.boardTheme === "classic") return "oklch(0.7 0.15 85)";
+    return "oklch(0.6 0.15 162)";
+  };
 
+  // Get winner for overlay text
   const winnerForOverlay =
     status === "won"
       ? checkWinner(board)?.winner
@@ -993,16 +1305,183 @@ export default function TicTacToe() {
     });
   }, [winnerForOverlay, moveHistory.length, elapsedSeconds]);
 
+  // Timeline moves (last 9)
+  const timelineMoves = moveHistory.slice(-9);
+
+  // ────────────────────────────────────────
+  // Thinking dots component
+  // ────────────────────────────────────────
+
+  const ThinkingDots = ({ diff }: { diff: Difficulty }) => {
+    if (diff === "easy") {
+      return (
+        <span className="flex items-center gap-1">
+          <span
+            className="inline-block size-1.5 rounded-full bg-muted-foreground"
+            style={{ animation: "thinking-dot-1 1s ease-in-out infinite" }}
+          />
+        </span>
+      );
+    }
+    if (diff === "medium") {
+      return (
+        <span className="flex items-center gap-1">
+          <span
+            className="inline-block size-1.5 rounded-full bg-muted-foreground"
+            style={{ animation: "thinking-dot-2 1s ease-in-out infinite" }}
+          />
+          <span
+            className="inline-block size-1.5 rounded-full bg-muted-foreground"
+            style={{ animation: "thinking-dot-2 1s ease-in-out infinite 0.3s" }}
+          />
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1">
+        {[0, 0.2, 0.4].map((delay, i) => (
+          <span
+            key={i}
+            className="inline-block size-1.5 rounded-full bg-muted-foreground"
+            style={{ animation: "thinking-dot-3 0.6s ease-in-out infinite", animationDelay: `${delay}s` }}
+          />
+        ))}
+      </span>
+    );
+  };
+
+  // ────────────────────────────────────────
+  // Win line SVG coordinates
+  // ────────────────────────────────────────
+
+  const getWinLineCoords = () => {
+    if (winLine.length !== 3) return null;
+    const start = CELL_PERCENT_POSITIONS[winLine[0]];
+    const end = CELL_PERCENT_POSITIONS[winLine[2]];
+    return {
+      x1: start[0],
+      y1: start[1],
+      x2: end[0],
+      y2: end[1],
+    };
+  };
+
   // ────────────────────────────────────────
   // Render
   // ────────────────────────────────────────
 
   return (
-    <main className="relative flex flex-1 items-center justify-center px-6 py-16">
+    <main className="relative flex flex-1 items-center justify-center px-6 py-16 pb-24 sm:pb-16">
       <div className="ambient-grid absolute inset-0 pointer-events-none opacity-30" />
 
+      {/* Achievement Toast Container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        <AnimatePresence>
+          {achievementToast && (
+            <AchievementToast
+              achievement={achievementToast}
+              onDismiss={() => setAchievementToast(null)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Game Recap Dialog */}
+      <Dialog open={recapOpen} onOpenChange={(open) => { if (!open) handleCloseRecap(); }}>
+        <DialogContent className="border-border/40 bg-card/95 backdrop-blur-xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gradient">
+              {recapResult?.winner
+                ? <Trophy className="size-4 text-amber-500" />
+                : <Handshake className="size-4 text-muted-foreground" />
+              }
+              Game Recap
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground/60">
+              {recapResult?.winner
+                ? `${recapResult.winner} Won!`
+                : "Draw"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {recapResult && (
+            <div className="flex flex-col gap-4 pt-2">
+              {/* Result icon */}
+              <div className="text-center">
+                <div className="text-4xl mb-2">
+                  {recapResult.winner ? "🏆" : "🤝"}
+                </div>
+                <p className="text-lg font-bold">
+                  {recapResult.winner
+                    ? `${recapResult.winner} Won!`
+                    : "It&apos;s a Draw!"}
+                </p>
+              </div>
+
+              {/* Game stats */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2 text-center">
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">Mode</span>
+                  <p className="text-xs font-medium">{recapResult.mode === "ai" ? "vs AI" : "2 Players"}</p>
+                </div>
+                <div className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2 text-center">
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">Difficulty</span>
+                  <p className="text-xs font-medium capitalize">{recapResult.mode === "ai" ? recapResult.difficulty : "—"}</p>
+                </div>
+                <div className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2 text-center">
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">Moves</span>
+                  <p className="text-xs font-medium tabular-nums">{recapResult.moves}</p>
+                </div>
+                <div className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2 text-center">
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">Duration</span>
+                  <p className="text-xs font-medium tabular-nums">{formatTime(recapResult.time)}</p>
+                </div>
+              </div>
+
+              {/* Mini replay */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={replayPlaying ? "secondary" : "outline"}
+                    onClick={() => {
+                      if (replayPlaying) {
+                        setReplayPlaying(false);
+                        if (replayTimerRef.current) clearInterval(replayTimerRef.current);
+                      } else {
+                        if (replayStep >= recapHistory.length) setReplayStep(0);
+                        setReplayPlaying(true);
+                      }
+                    }}
+                    className="h-7 gap-1 px-2 text-[11px]"
+                  >
+                    <Play className="size-3" />
+                    {replayPlaying ? "Pause" : "Play"}
+                  </Button>
+                  <span className="text-[10px] text-muted-foreground/50 font-mono tabular-nums">
+                    {replayStep}/{recapHistory.length}
+                  </span>
+                </div>
+                <MiniReplayGrid
+                  moves={recapHistory}
+                  currentStep={replayStep}
+                  theme={settings.boardTheme}
+                />
+              </div>
+
+              <Button
+                onClick={handleCloseRecap}
+                className="w-full"
+              >
+                Close &amp; New Game
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Settings Dialog */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog open={settingsOpen} onOpenChange={(open) => { setSettingsOpen(open); if (open) playUIClick(); }}>
         <DialogContent className="border-border/40 bg-card/95 backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-gradient">
@@ -1047,7 +1526,7 @@ export default function TicTacToe() {
                 {(["minimal", "neon", "classic"] as BoardTheme[]).map((t) => (
                   <button
                     key={t}
-                    onClick={() => updateSettings({ boardTheme: t })}
+                    onClick={() => { updateSettings({ boardTheme: t }); playUIClick(); }}
                     className={`rounded-lg border px-3 py-2 text-[11px] font-medium capitalize transition-all ${
                       settings.boardTheme === t
                         ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
@@ -1076,7 +1555,7 @@ export default function TicTacToe() {
               </div>
               <Switch
                 checked={settings.showMoveNumbers}
-                onCheckedChange={(v) => updateSettings({ showMoveNumbers: v })}
+                onCheckedChange={(v) => { updateSettings({ showMoveNumbers: v }); playUIClick(); }}
               />
             </div>
 
@@ -1132,6 +1611,7 @@ export default function TicTacToe() {
                 if (gameMode !== "2p") {
                   handleReset();
                   setGameMode("2p");
+                  playUIClick();
                 }
               }}
               className={`h-8 gap-1.5 px-3 text-xs font-medium ${
@@ -1150,6 +1630,7 @@ export default function TicTacToe() {
                 if (gameMode !== "ai") {
                   handleReset();
                   setGameMode("ai");
+                  playUIClick();
                 }
               }}
               className={`h-8 gap-1.5 px-3 text-xs font-medium ${
@@ -1181,6 +1662,7 @@ export default function TicTacToe() {
                       onClick={() => {
                         setDifficulty(d);
                         handleReset();
+                        playUIClick();
                       }}
                       className={`h-7 px-2.5 text-[11px] font-medium capitalize ${
                         difficulty === d
@@ -1244,7 +1726,7 @@ export default function TicTacToe() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleReset}
+                    onClick={handleResetWithRecap}
                     className="size-8"
                     title="New Game (N)"
                   >
@@ -1253,7 +1735,7 @@ export default function TicTacToe() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleFullReset}
+                    onClick={() => { handleFullReset(); playUIClick(); }}
                     disabled={gamesPlayed === 0}
                     className="size-8"
                     title="Reset Score"
@@ -1263,7 +1745,7 @@ export default function TicTacToe() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    onClick={() => { setSoundEnabled(!soundEnabled); playUIClick(); }}
                     className="size-8"
                     title={soundEnabled ? "Mute sounds" : "Enable sounds"}
                   >
@@ -1299,6 +1781,46 @@ export default function TicTacToe() {
           </div>
         )}
 
+        {/* Move Timeline */}
+        {timelineMoves.length > 0 && (
+          <div className="flex w-full items-center gap-1 overflow-hidden">
+            <div className="flex items-center gap-0.5 overflow-x-auto max-w-full no-scrollbar py-1">
+              {timelineMoves.map((move, idx) => {
+                const isLast = idx === timelineMoves.length - 1;
+                return (
+                  <div key={moveHistory.length - timelineMoves.length + idx} className="flex items-center shrink-0">
+                    {idx > 0 && (
+                      <div className="w-3 h-[1px] bg-border/30" />
+                    )}
+                    <motion.div
+                      initial={isLast ? { scale: 0, opacity: 0 } : false}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      className="relative group"
+                    >
+                      <div
+                        className={`flex size-5 items-center justify-center rounded-full text-[8px] font-bold border ${
+                          move.player === "X"
+                            ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
+                            : "bg-amber-500/15 border-amber-500/30 text-amber-500"
+                        } ${isLast ? "ring-1 ring-primary/40" : ""}`}
+                      >
+                        {move.player}
+                      </div>
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-30">
+                        <div className="rounded-md border border-border/30 bg-card px-1.5 py-0.5 text-[9px] font-mono whitespace-nowrap shadow-md">
+                          Move {moveHistory.length - timelineMoves.length + idx + 1} → {POSITION_LABELS[move.index]}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Game Board Area */}
         <div className="relative">
           {/* Turn indicator */}
@@ -1310,22 +1832,8 @@ export default function TicTacToe() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <span className="relative flex size-2">
-                    <motion.span
-                      className="absolute inline-flex size-full rounded-full bg-muted-foreground"
-                      animate={{
-                        scale: [1, 1.8, 1],
-                        opacity: [0.7, 0.2, 0.7],
-                      }}
-                      transition={{
-                        duration: 1.2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    />
-                    <span className="relative inline-flex size-2 rounded-full bg-muted-foreground/80" />
-                  </span>
-                  AI Thinking&#8230;
+                  <ThinkingDots diff={difficulty} />
+                  <span className="ml-1">AI Thinking&#8230;</span>
                 </motion.span>
               ) : (
                 <div className="flex items-center gap-2">
@@ -1368,7 +1876,7 @@ export default function TicTacToe() {
 
           {/* Board */}
           <div className="relative inline-block">
-            <div className="animated-gradient-border rounded-xl p-[2px]">
+            <div className={`animated-gradient-border rounded-xl p-[2px] ${boardShadowClass}`}>
               <div
                 ref={boardRef}
                 className={`grid grid-cols-3 gap-1.5 rounded-[10px] bg-background p-2.5 relative z-[1] ${boardThemeClass}`}
@@ -1382,6 +1890,7 @@ export default function TicTacToe() {
                   const col = index % 3;
                   const isShaking = shakeCell === index;
                   const isRippling = rippleCell === index;
+                  const isTouchDown = touchDownCell === index;
                   const moveNum = settings.showMoveNumbers
                     ? moveNumberMap.current.get(index)
                     : undefined;
@@ -1391,6 +1900,14 @@ export default function TicTacToe() {
                       key={index}
                       whileTap={{ scale: 0.93 }}
                       onClick={() => handleCellClick(index)}
+                      onTouchStart={(e) => {
+                        setTouchDownCell(index);
+                        (e.currentTarget as HTMLElement).style.transform = "scale(0.95)";
+                      }}
+                      onTouchEnd={(e) => {
+                        setTouchDownCell(null);
+                        (e.currentTarget as HTMLElement).style.transform = "";
+                      }}
                       onMouseEnter={() => setSelectedCell(index)}
                       disabled={
                         !!cell ||
@@ -1464,6 +1981,30 @@ export default function TicTacToe() {
               </div>
             </div>
 
+            {/* Win Line SVG Overlay */}
+            {status === "won" && winLine.length === 3 && (() => {
+              const coords = getWinLineCoords();
+              if (!coords) return null;
+              return (
+                <svg className="win-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <line
+                    x1={coords.x1}
+                    y1={coords.y1}
+                    x2={coords.x2}
+                    y2={coords.y2}
+                    stroke={getWinLineColor()}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    style={{
+                      strokeDasharray: 150,
+                      strokeDashoffset: 150,
+                      animation: "draw-line 0.4s ease-out forwards",
+                    }}
+                  />
+                </svg>
+              );
+            })()}
+
             {/* Win/Draw Overlay */}
             <AnimatePresence>
               {status !== "playing" && (
@@ -1514,8 +2055,7 @@ export default function TicTacToe() {
                         </motion.p>
                       )}
 
-                      {/* Timer */}
-                      {gameStartTime && !lastGameResult && (
+                      {!lastGameResult && gameStartTime && (
                         <motion.p
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -1539,7 +2079,7 @@ export default function TicTacToe() {
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={handleReset}
+                          onClick={handleResetWithRecap}
                           className="h-7 gap-1.5 px-3 text-[11px] font-medium"
                         >
                           <Play className="size-3" />
@@ -1650,7 +2190,7 @@ export default function TicTacToe() {
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={handleReset}
+                          onClick={handleResetWithRecap}
                           className="h-7 gap-1.5 px-3 text-[11px] font-medium"
                         >
                           <Play className="size-3" />
@@ -1978,7 +2518,76 @@ export default function TicTacToe() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Unlocked Achievements */}
+        {unlockedAchievements.size > 0 && (
+          <Card className="w-full border-border/30 bg-card/20">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="size-3 text-amber-500/70" />
+                <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/60">
+                  Achievements
+                </span>
+                <span className="font-mono text-[10px] text-muted-foreground/30">
+                  ({unlockedAchievements.size}/{ACHIEVEMENTS.length})
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {ACHIEVEMENTS.filter((a) => unlockedAchievements.has(a.id)).map((ach) => (
+                  <div
+                    key={ach.id}
+                    className="flex items-center gap-1.5 rounded-md border border-amber-500/15 bg-amber-500/5 px-2 py-1"
+                  >
+                    <span className="text-sm">{ach.icon}</span>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-medium text-amber-500/80">{ach.title}</span>
+                    </div>
+                  </div>
+                ))}
+                {ACHIEVEMENTS.filter((a) => !unlockedAchievements.has(a.id)).map((ach) => (
+                  <div
+                    key={ach.id}
+                    className="flex items-center gap-1.5 rounded-md border border-border/15 bg-secondary/5 px-2 py-1 opacity-30"
+                  >
+                    <span className="text-sm">{ach.icon}</span>
+                    <span className="text-[10px] font-medium text-muted-foreground">{ach.title}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
+
+      {/* Mobile Game Info Bar */}
+      <div className="mobile-game-bar sm:hidden">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex size-5 items-center justify-center rounded border text-[10px] font-bold ${
+                status === "playing"
+                  ? currentPlayer === "X"
+                    ? "border-foreground/30 text-foreground"
+                    : "border-muted-foreground/30 text-muted-foreground"
+                  : "border-amber-500/30 text-amber-500"
+              }`}
+            >
+              {status === "won"
+                ? winnerForOverlay || "-"
+                : status === "draw"
+                  ? "="
+                  : currentPlayer}
+            </span>
+            <span className="text-[10px] text-muted-foreground/60">
+              {status === "playing" ? (gameMode === "ai" && aiThinking ? "Thinking..." : `${currentPlayer}'s turn`) : statusText}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground/50">
+            <span>{moveHistory.length}m</span>
+            {gameStartTime && <span>{formatTime(elapsedSeconds)}</span>}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
