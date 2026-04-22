@@ -13,8 +13,51 @@ import {
   Bot,
   Users,
   Brain,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+// ── Web Audio API Sound Effects ─────────────────────────────────────────
+
+const audioCtx = typeof window !== "undefined" ? new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)() : null;
+
+function playTone(frequency: number, duration: number, volume: number = 0.08, type: OscillatorType = "sine") {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playMoveSound() {
+  playTone(800, 0.08, 0.06);
+}
+
+function playPlaceSound() {
+  playTone(600, 0.12, 0.08);
+}
+
+function playWinSound() {
+  playTone(523, 0.15, 0.07);
+  setTimeout(() => playTone(659, 0.15, 0.07), 100);
+  setTimeout(() => playTone(784, 0.25, 0.07), 200);
+}
+
+function playDrawSound() {
+  playTone(400, 0.2, 0.06);
+  setTimeout(() => playTone(350, 0.3, 0.06), 150);
+}
+
+function playUndoSound() {
+  playTone(500, 0.06, 0.04);
+}
 
 type CellValue = "X" | "O" | null;
 type Board = CellValue[];
@@ -182,10 +225,18 @@ export default function TicTacToe() {
   const [gameMode, setGameMode] = useState<GameMode>("2p");
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
   const [aiThinking, setAiThinking] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const boardRef = useRef<HTMLDivElement>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const status = getGameStatus(board);
+
+  // Resume AudioContext on first user interaction (autoplay policy)
+  const resumeAudio = useCallback(() => {
+    if (audioCtx?.state === "suspended") {
+      audioCtx.resume();
+    }
+  }, []);
 
   // Clean up AI timeout on unmount
   useEffect(() => {
@@ -232,6 +283,7 @@ export default function TicTacToe() {
       isDraw: boolean
     ) => {
       if (winResult) {
+        if (soundEnabled) playWinSound();
         setWinLine(winResult.line);
         setScore((prev) => ({
           ...prev,
@@ -239,11 +291,12 @@ export default function TicTacToe() {
         }));
         setGamesPlayed((prev) => prev + 1);
       } else if (isDraw) {
+        if (soundEnabled) playDrawSound();
         setScore((prev) => ({ ...prev, draw: prev.draw + 1 }));
         setGamesPlayed((prev) => prev + 1);
       }
     },
-    []
+    [soundEnabled]
   );
 
   // Trigger AI move
@@ -266,6 +319,7 @@ export default function TicTacToe() {
           // Since we're inside setBoard, we use a microtask approach
           setTimeout(() => {
             setMoveHistory(newHistory);
+            if (soundEnabled) playMoveSound();
             if (winResult || isDraw) {
               finishGame(winResult, isDraw);
             }
@@ -277,11 +331,12 @@ export default function TicTacToe() {
         setAiThinking(false);
       }, 400);
     },
-    [difficulty, applyMove, finishGame]
+    [difficulty, applyMove, finishGame, soundEnabled]
   );
 
   const handleCellClick = useCallback(
     (index: number) => {
+      resumeAudio();
       if (board[index] || status !== "playing") return;
       // In AI mode, block input during AI's turn
       if (gameMode === "ai" && (currentPlayer !== "X" || aiThinking)) return;
@@ -295,6 +350,8 @@ export default function TicTacToe() {
 
       setBoard(newBoard);
       setMoveHistory(newHistory);
+
+      if (soundEnabled) playPlaceSound();
 
       if (winResult || isDraw) {
         finishGame(winResult, isDraw);
@@ -318,11 +375,14 @@ export default function TicTacToe() {
       applyMove,
       finishGame,
       triggerAIMove,
+      soundEnabled,
+      resumeAudio,
     ]
   );
 
   const handleUndo = useCallback(() => {
     if (moveHistory.length === 0 || status !== "playing") return;
+    if (soundEnabled) playUndoSound();
 
     // In AI mode, undo must undo both the AI move and the player move
     if (gameMode === "ai") {
@@ -364,7 +424,7 @@ export default function TicTacToe() {
       setWinLine([]);
       setSelectedCell(lastMove.index);
     }
-  }, [board, moveHistory, status, gameMode, aiThinking]);
+  }, [board, moveHistory, status, gameMode, aiThinking, soundEnabled]);
 
   const handleReset = useCallback(() => {
     // Cancel any pending AI move
@@ -628,6 +688,15 @@ export default function TicTacToe() {
                     title="Reset Score"
                   >
                     <Clock className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="size-8"
+                    title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+                  >
+                    {soundEnabled ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
                   </Button>
                 </div>
               </div>

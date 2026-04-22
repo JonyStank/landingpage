@@ -10,6 +10,7 @@ import {
   Zap,
   Palette,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react";
 
 interface HomeProps {
@@ -55,6 +56,16 @@ const features = [
     title: "Dark Minimalist",
     description: "Clean UI with carefully crafted visual hierarchy.",
   },
+];
+
+const cryptoData = [
+  { symbol: "BTC", name: "Bitcoin", price: "67,432.18", change: "+2.4%", positive: true },
+  { symbol: "ETH", name: "Ethereum", price: "3,521.07", change: "+1.8%", positive: true },
+  { symbol: "SOL", name: "Solana", price: "178.92", change: "-0.6%", positive: false },
+  { symbol: "BNB", name: "BNB", price: "612.35", change: "+3.1%", positive: true },
+  { symbol: "ADA", name: "Cardano", price: "0.68", change: "-1.2%", positive: false },
+  { symbol: "DOGE", name: "Dogecoin", price: "0.165", change: "+5.7%", positive: true },
+  { symbol: "DOT", name: "Polkadot", price: "8.42", change: "+0.9%", positive: true },
 ];
 
 const container = {
@@ -349,6 +360,57 @@ export default function Home({ onNavigate }: HomeProps) {
           {/* Code body */}
           <div className="p-4">
             <HighlightedCode code={codeSnippet} />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Crypto Ticker Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.58, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-8 w-full max-w-3xl"
+      >
+        <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
+            <TrendingUp className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Crypto Market</span>
+          </div>
+          {/* Scrollable ticker */}
+          <div className="relative">
+            {/* Left gradient mask */}
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 bg-gradient-to-r from-card/80 to-transparent" />
+            {/* Right gradient mask */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-8 bg-gradient-to-l from-card/80 to-transparent" />
+            <div className="no-scrollbar flex gap-1 overflow-x-auto p-3">
+              {cryptoData.map((coin) => (
+                <div
+                  key={coin.symbol}
+                  className="flex shrink-0 items-center gap-3 rounded-lg border border-border/30 bg-secondary/10 px-3.5 py-2.5 transition-all duration-200 hover:border-border/60 hover:bg-secondary/20"
+                >
+                  {/* Symbol circle */}
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-[11px] font-bold text-foreground">
+                    {coin.symbol.slice(0, 2)}
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-medium text-foreground/90">{coin.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">
+                        ${coin.price}
+                      </span>
+                      <span
+                        className={`font-mono text-[11px] font-medium ${
+                          coin.positive ? "text-emerald-400" : "text-red-400"
+                        }`}
+                      >
+                        {coin.change}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>

@@ -1,8 +1,12 @@
 "use client";
 
+import { useState, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   User,
@@ -17,6 +21,8 @@ import {
   BarChart3,
   ExternalLink,
   GitBranch,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
 
 const skills = [
@@ -108,6 +114,18 @@ function StatusBadge({ status }: { status: "active" | "development" }) {
 }
 
 export default function Profile() {
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [contactSent, setContactSent] = useState(false);
+
+  function handleContactSubmit(e: FormEvent) {
+    e.preventDefault();
+    setContactSent(true);
+    setTimeout(() => {
+      setContactSent(false);
+      setContactForm({ name: "", email: "", message: "" });
+    }, 2000);
+  }
+
   return (
     <main className="relative flex flex-1 items-start justify-center px-6 py-16">
       <div className="ambient-grid absolute inset-0 pointer-events-none opacity-30" />
@@ -289,6 +307,64 @@ export default function Profile() {
                   </div>
                 </motion.div>
               ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Contact Card */}
+        <motion.div variants={item}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Mail className="size-4 text-muted-foreground" />
+                Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleContactSubmit} className="space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Your name"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                  className="border-border/30 bg-secondary/10 text-sm placeholder:text-muted-foreground/50 rounded-lg"
+                />
+                <Input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                  required
+                  className="border-border/30 bg-secondary/10 text-sm placeholder:text-muted-foreground/50 rounded-lg"
+                />
+                <Textarea
+                  placeholder="Your message..."
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, message: e.target.value }))}
+                  required
+                  rows={4}
+                  className="border-border/30 bg-secondary/10 text-sm placeholder:text-muted-foreground/50 rounded-lg resize-none"
+                />
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled={contactSent}
+                >
+                  {contactSent ? (
+                    <>
+                      <CheckCircle2 className="size-4 text-emerald-400" />
+                      Sent!
+                    </>
+                  ) : (
+                    <>
+                      <Send className="size-4" />
+                      Send Message
+                    </>
+                  )}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </motion.div>
