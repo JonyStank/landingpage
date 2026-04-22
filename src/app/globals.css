@@ -126,6 +126,16 @@
 }
 
 /* ────────────────────────────────────────
+   @property for animated gradient angle
+   ──────────────────────────────────────── */
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ────────────────────────────────────────
    Keyframes
    ──────────────────────────────────────── */
 
@@ -183,12 +193,29 @@
   }
 }
 
+@keyframes spin-slow {
+  from {
+    --gradient-angle: 0deg;
+  }
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ────────────────────────────────────────
    Utility Classes
    ──────────────────────────────────────── */
 
 @layer utilities {
-  /* Soft, diffused glow text */
   .glow-text {
     text-shadow:
       0 0 12px oklch(0.985 0 0 / 8%),
@@ -196,13 +223,21 @@
       0 0 80px oklch(0.985 0 0 / 4%);
   }
 
-  /* Glassmorphism card */
   .glass-card {
     backdrop-filter: blur(12px);
     background: oklch(1 0 0 / 3%);
   }
 
-  /* Ambient grid background — 80px with subtle opacity */
+  .glass-effect {
+    backdrop-filter: blur(16px) saturate(1.5);
+    background: oklch(0.985 0 0 / 6%);
+    border: 1px solid oklch(1 0 0 / 10%);
+  }
+  .dark .glass-effect {
+    background: oklch(1 0 0 / 5%);
+    border: 1px solid oklch(1 0 0 / 8%);
+  }
+
   .ambient-grid {
     background-image:
       linear-gradient(oklch(1 0 0 / 1.5%) 1px, transparent 1px),
@@ -210,7 +245,6 @@
     background-size: 80px 80px;
   }
 
-  /* Ambient gradient blobs — subtle moving color orbs */
   .ambient-gradient {
     position: relative;
     overflow: hidden;
@@ -242,14 +276,12 @@
     animation: float-gradient 25s ease-in-out infinite reverse;
   }
 
-  /* Floating particle — combines float animation with gentle opacity */
   .floating-particle {
     animation: float 8s ease-in-out infinite;
     opacity: 0.35;
     pointer-events: none;
   }
 
-  /* Gradient border via background-clip trick */
   .gradient-border {
     position: relative;
     background:
@@ -269,7 +301,6 @@
     border-radius: var(--radius);
   }
 
-  /* Skeleton shimmer loading state */
   .shimmer {
     background: linear-gradient(
       90deg,
@@ -282,7 +313,58 @@
     border-radius: var(--radius);
   }
 
-  /* Blinking typing cursor */
+  .animate-spin-slow {
+    animation: rotate-slow 60s linear infinite;
+  }
+
+  .animated-gradient-border {
+    --gradient-angle: 0deg;
+    border-radius: 0.75rem;
+    background: conic-gradient(
+      from var(--gradient-angle),
+      oklch(0.7 0.15 85 / 35%),
+      oklch(0.65 0.2 160 / 35%),
+      oklch(0.55 0.2 280 / 35%),
+      oklch(0.65 0.15 200 / 35%),
+      oklch(0.7 0.15 85 / 35%)
+    );
+    animation: spin-slow 60s linear infinite;
+  }
+  .dark .animated-gradient-border {
+    background: conic-gradient(
+      from var(--gradient-angle),
+      oklch(0.7 0.15 85 / 25%),
+      oklch(0.65 0.2 160 / 25%),
+      oklch(0.55 0.2 280 / 25%),
+      oklch(0.65 0.15 200 / 25%),
+      oklch(0.7 0.15 85 / 25%)
+    );
+  }
+
+  .stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 8%);
+  }
+  .dark .stat-card:hover {
+    box-shadow: 0 4px 12px oklch(0 0 0 / 30%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      oklch(0.7 0.15 85),
+      oklch(0.65 0.2 160),
+      oklch(0.55 0.2 280)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
   .typing-cursor {
     display: inline-block;
     width: 2px;
@@ -293,7 +375,6 @@
     animation: typing 1s step-end infinite;
   }
 
-  /* Noise / grain texture overlay */
   .noise-overlay {
     position: relative;
   }
@@ -324,22 +405,41 @@
 }
 
 /* ────────────────────────────────────────
-   Scrollbar — 8px, more visible
+   Scrollbar — 8px, theme-aware
    ──────────────────────────────────────── */
 
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-::-webkit-scrollbar-track {
+
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: oklch(0.94 0.005 260 / 50%);
+}
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.01 260 / 25%);
+  border-radius: 4px;
+}
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0.01 260 / 40%);
+}
+
+.dark ::-webkit-scrollbar-track {
   background: oklch(1 0 0 / 3%);
 }
-::-webkit-scrollbar-thumb {
+.dark ::-webkit-scrollbar-thumb {
   background: oklch(1 0 0 / 18%);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
+.dark ::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 32%);
+}
+
+html:not(.dark) {
+  scrollbar-color: oklch(0.7 0.01 260 / 25%) oklch(0.94 0.005 260 / 50%);
+}
+.dark {
+  scrollbar-color: oklch(1 0 0 / 18%) oklch(1 0 0 / 3%);
 }
 
 /* ────────────────────────────────────────
@@ -347,21 +447,29 @@
    ──────────────────────────────────────── */
 
 ::selection {
+  background: oklch(0.6 0.15 270 / 25%);
+  color: oklch(0.175 0.01 50);
+}
+.dark ::selection {
   background: oklch(1 0 0 / 15%);
   color: oklch(0.985 0 0);
 }
 
 /* ────────────────────────────────────────
-   Focus-visible — dark theme aware
+   Focus-visible — theme-aware
    ──────────────────────────────────────── */
 
-:focus-visible {
+html:not(.dark) :focus-visible {
+  outline: 2px solid oklch(0.5 0.15 260 / 50%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.dark :focus-visible {
   outline: 2px solid oklch(0.488 0.243 264.376 / 60%);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Remove default outline for mouse clicks, keep for keyboard */
 :focus:not(:focus-visible) {
   outline: none;
 }
