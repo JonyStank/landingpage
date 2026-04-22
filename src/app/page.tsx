@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import Navbar from "@/components/navbar";
 import Home from "@/components/home";
 import Profile from "@/components/profile";
@@ -20,18 +20,20 @@ const pageComponents: Record<Page, React.ComponentType<{ onNavigate: (page: Page
   game: TicTacToe,
 };
 
-function getInitialPage(): Page {
-  if (typeof window !== "undefined") {
-    const hash = window.location.hash.replace("#", "");
-    if (VALID_PAGES.includes(hash as Page)) {
-      return hash as Page;
-    }
-  }
+function getPageFromHash(): Page {
+  if (typeof window === "undefined") return "home";
+  const hash = window.location.hash.replace("#", "");
+  if (VALID_PAGES.includes(hash as Page)) return hash as Page;
   return "home";
 }
 
+function subscribeToHash(callback: () => void) {
+  window.addEventListener("hashchange", callback);
+  return () => window.removeEventListener("hashchange", callback);
+}
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
+  const currentPage = useSyncExternalStore(subscribeToHash, getPageFromHash, () => "home" as Page);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -57,14 +59,12 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleNavigate = (page: Page) => {
-    setCurrentPage(page);
+  const handleNavigate = useCallback((page: Page) => {
     window.location.hash = page;
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
   const PageComponent = pageComponents[currentPage];
-  const isLoading = false;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -79,27 +79,28 @@ export default function App() {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex min-h-[calc(100vh-3.5rem)]"
           >
-            {isLoading ? (
-            <LoadingSkeleton />
-          ) : (
             <PageComponent onNavigate={handleNavigate} />
-          )}
           </motion.div>
         </AnimatePresence>
       </div>
-      <footer className="mt-auto border-t border-border/20 py-5">
-        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
-          <span className="font-mono text-[11px] text-muted-foreground/50">
-            &copy; {new Date().getFullYear()} 陳家盛
-          </span>
-          <div className="flex items-center gap-4">
-            <button onClick={() => handleNavigate("home")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Home</button>
-            <button onClick={() => handleNavigate("profile")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Profile</button>
-            <button onClick={() => handleNavigate("game")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Game</button>
+      <footer className="mt-auto py-5">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="diamond-divider mb-4">
+            <span className="text-muted-foreground/20 text-xs select-none">◆</span>
           </div>
-          <span className="font-mono text-[11px] text-muted-foreground/30">
-            React + TypeScript
-          </span>
+          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+            <span className="font-mono text-[11px] text-muted-foreground/50">
+              &copy; {new Date().getFullYear()} 陳家盛
+            </span>
+            <div className="flex items-center gap-4">
+              <button onClick={() => handleNavigate("home")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Home</button>
+              <button onClick={() => handleNavigate("profile")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Profile</button>
+              <button onClick={() => handleNavigate("game")} className="font-mono text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground/80">Game</button>
+            </div>
+            <span className="font-mono text-[11px] text-muted-foreground/30">
+              React + TypeScript
+            </span>
+          </div>
         </div>
       </footer>
 

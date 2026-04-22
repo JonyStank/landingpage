@@ -211,6 +211,99 @@
   }
 }
 
+@keyframes travel {
+  0% {
+    left: 0%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 6px);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    color: inherit;
+    text-shadow: none;
+  }
+  30% {
+    color: oklch(0.7 0.15 160);
+    text-shadow: 0 0 8px oklch(0.7 0.15 160 / 40%), 0 0 16px oklch(0.7 0.15 160 / 20%);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+@keyframes rainbow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes timeline-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+
+@keyframes breathe-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(60px); }
+  50% { opacity: 0.55; transform: scale(1.08); filter: blur(70px); }
+}
+
+@keyframes gradient-sweep {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
 /* ────────────────────────────────────────
    Utility Classes
    ──────────────────────────────────────── */
@@ -375,6 +468,45 @@
     animation: typing 1s step-end infinite;
   }
 
+  .traveling-dot {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: oklch(0.985 0 0);
+    box-shadow: 0 0 4px oklch(0.7 0.15 160 / 50%);
+    animation: travel 2.5s ease-in-out infinite;
+  }
+
+  .rainbow-ring {
+    background: linear-gradient(
+      270deg,
+      oklch(0.7 0.15 160),
+      oklch(0.65 0.2 200),
+      oklch(0.7 0.15 270),
+      oklch(0.65 0.2 310),
+      oklch(0.7 0.15 160)
+    );
+    background-size: 400% 400%;
+    animation: rainbow-shift 3s ease infinite;
+  }
+
+  .sparkle-finished {
+    animation: sparkle 0.6s ease-out;
+  }
+
+  .timeline-line-animated {
+    transform-origin: top;
+    animation: timeline-grow 1s ease-out forwards;
+  }
+
+  .pulse-green-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
   .noise-overlay {
     position: relative;
   }
@@ -390,6 +522,187 @@
     background-size: 256px 256px;
     mix-blend-mode: overlay;
   }
+
+  .scroll-indicator {
+    animation: bounce-slow 2s ease-in-out infinite;
+  }
+
+  .hover-gradient-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+  .hover-gradient-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      oklch(0.6 0.15 162 / 8%) 40%,
+      oklch(0.55 0.12 180 / 8%) 50%,
+      transparent 60%
+    );
+    background-size: 200% 200%;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .hover-gradient-sweep:hover::after {
+    opacity: 1;
+    animation: gradient-sweep 1.5s ease-out forwards;
+  }
+  .hover-gradient-sweep > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dot-pattern {
+    background-image: radial-gradient(oklch(1 0 0 / 6%) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .dark .dot-pattern {
+    background-image: radial-gradient(oklch(1 0 0 / 4%) 1px, transparent 1px);
+  }
+
+  .cta-micro-interact {
+    transition: transform 0.2s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  }
+  .cta-micro-interact:hover {
+    animation: cta-pulse 0.3s ease;
+  }
+  @keyframes cta-pulse {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-2px) scale(1.02); }
+    100% { transform: translateY(-2px) scale(1); }
+  }
+
+  .code-line-hover:hover {
+    background: oklch(1 0 0 / 3%);
+  }
+  .dark .code-line-hover:hover {
+    background: oklch(1 0 0 / 4%);
+  }
+
+  .icon-glow-emerald:hover {
+    box-shadow: 0 0 20px 4px oklch(0.6 0.15 162 / 15%);
+  }
+  .icon-glow-teal:hover {
+    box-shadow: 0 0 20px 4px oklch(0.55 0.12 180 / 15%);
+  }
+  .icon-glow-amber:hover {
+    box-shadow: 0 0 20px 4px oklch(0.7 0.15 85 / 15%);
+  }
+  .icon-glow-cyan:hover {
+    box-shadow: 0 0 20px 4px oklch(0.65 0.15 200 / 15%);
+  }
+
+  .cell-ripple {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .cell-ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    background: oklch(0.6 0.15 162 / 40%);
+    animation: ripple 0.6s ease-out forwards;
+  }
+
+  .cell-shake {
+    animation: shake 0.4s ease-in-out;
+  }
+
+  .stat-connector {
+    position: relative;
+  }
+  .stat-connector::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -50%;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, oklch(1 0 0 / 15%), oklch(1 0 0 / 5%));
+    pointer-events: none;
+  }
+  .dark .stat-connector::after {
+    background: linear-gradient(90deg, oklch(1 0 0 / 10%), oklch(1 0 0 / 3%));
+  }
+  .stat-connector:last-child::after {
+    display: none;
+  }
+}
+
+/* ────────────────────────────────────────
+   Board Theme: Neon
+   ──────────────────────────────────────── */
+
+.board-neon button {
+  border-color: oklch(0.65 0.2 200 / 30%) !important;
+  box-shadow: 0 0 8px oklch(0.65 0.2 200 / 8%), inset 0 0 8px oklch(0.65 0.2 200 / 4%);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+.board-neon button:hover:not(:disabled) {
+  border-color: oklch(0.65 0.2 200 / 50%) !important;
+  box-shadow: 0 0 16px oklch(0.65 0.2 200 / 15%), inset 0 0 12px oklch(0.65 0.2 200 / 6%);
+}
+.board-neon button.win-cell-neon {
+  border-color: oklch(0.65 0.2 310 / 50%) !important;
+  box-shadow: 0 0 20px oklch(0.65 0.2 310 / 20%), inset 0 0 16px oklch(0.65 0.2 310 / 8%);
+}
+.board-neon .mark-x {
+  color: oklch(0.7 0.22 195);
+  text-shadow: 0 0 12px oklch(0.7 0.22 195 / 50%);
+}
+.board-neon .mark-o {
+  color: oklch(0.7 0.22 310);
+  text-shadow: 0 0 12px oklch(0.7 0.22 310 / 50%);
+}
+
+/* ────────────────────────────────────────
+   Board Theme: Classic
+   ──────────────────────────────────────── */
+
+.board-classic button {
+  border-width: 2px !important;
+  border-color: oklch(1 0 0 / 25%) !important;
+  background-color: oklch(1 0 0 / 5%) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+html:not(.dark) .board-classic button {
+  border-color: oklch(0 0 0 / 20%) !important;
+  background-color: oklch(0 0 0 / 3%) !important;
+}
+.board-classic button:hover:not(:disabled) {
+  border-color: oklch(1 0 0 / 40%) !important;
+}
+html:not(.dark) .board-classic button:hover:not(:disabled) {
+  border-color: oklch(0 0 0 / 30%) !important;
+}
+.board-classic button.win-cell-classic {
+  border-color: oklch(0.7 0.15 85 / 50%) !important;
+  background-color: oklch(0.7 0.15 85 / 8%) !important;
+}
+.board-classic .mark-x {
+  color: oklch(0.985 0 0);
+}
+html:not(.dark) .board-classic .mark-x {
+  color: oklch(0.175 0.01 50);
+}
+.board-classic .mark-o {
+  color: oklch(0.55 0.01 260);
+}
+html:not(.dark) .board-classic .mark-o {
+  color: oklch(0.55 0.15 260);
 }
 
 /* ────────────────────────────────────────
@@ -472,4 +785,25 @@ html:not(.dark) :focus-visible {
 
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+/* ────────────────────────────────────────
+   Diamond Footer Divider
+   ──────────────────────────────────────── */
+
+.diamond-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.diamond-divider::before,
+.diamond-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 12%), transparent);
+}
+.dark .diamond-divider::before,
+.dark .diamond-divider::after {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 8%), transparent);
 }

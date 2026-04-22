@@ -10,6 +10,7 @@ import {
   Zap,
   Palette,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   Copy,
   Check,
@@ -18,8 +19,16 @@ import {
   Clock,
   User,
   Gamepad2,
+  BookOpen,
+  Sparkles,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface HomeProps {
   onNavigate: (page: "profile" | "game") => void;
@@ -48,32 +57,46 @@ const features = [
     icon: Code2,
     title: "TypeScript",
     description: "Strictly typed for reliability and developer experience.",
+    complexity: "Core" as const,
+    glowClass: "icon-glow-cyan",
   },
   {
     icon: Layers,
     title: "Component Architecture",
     description: "Modular, reusable components with clean separation.",
+    complexity: "Essential" as const,
+    glowClass: "icon-glow-emerald",
   },
   {
     icon: Zap,
     title: "Interactive Game",
     description: "Functional Tic-Tac-Toe with state management.",
+    complexity: "Advanced" as const,
+    glowClass: "icon-glow-amber",
   },
   {
     icon: Palette,
     title: "Dark Minimalist",
     description: "Clean UI with carefully crafted visual hierarchy.",
+    complexity: "Essential" as const,
+    glowClass: "icon-glow-teal",
   },
 ];
 
+const complexityColors: Record<string, string> = {
+  Core: "border-cyan-500/40 text-cyan-400/80 bg-cyan-500/10",
+  Essential: "border-emerald-500/40 text-emerald-400/80 bg-emerald-500/10",
+  Advanced: "border-amber-500/40 text-amber-400/80 bg-amber-500/10",
+};
+
 const cryptoData = [
-  { symbol: "BTC", name: "Bitcoin", price: "67,432.18", change: "+2.4%", positive: true },
-  { symbol: "ETH", name: "Ethereum", price: "3,521.07", change: "+1.8%", positive: true },
-  { symbol: "SOL", name: "Solana", price: "178.92", change: "-0.6%", positive: false },
-  { symbol: "BNB", name: "BNB", price: "612.35", change: "+3.1%", positive: true },
-  { symbol: "ADA", name: "Cardano", price: "0.68", change: "-1.2%", positive: false },
-  { symbol: "DOGE", name: "Dogecoin", price: "0.165", change: "+5.7%", positive: true },
-  { symbol: "DOT", name: "Polkadot", price: "8.42", change: "+0.9%", positive: true },
+  { symbol: "BTC", name: "Bitcoin", price: "67,432.18", change: "+2.4%", positive: true, sparkline: [40, 35, 45, 38, 42] },
+  { symbol: "ETH", name: "Ethereum", price: "3,521.07", change: "+1.8%", positive: true, sparkline: [30, 32, 28, 35, 33] },
+  { symbol: "SOL", name: "Solana", price: "178.92", change: "-0.6%", positive: false, sparkline: [25, 22, 28, 30, 26] },
+  { symbol: "BNB", name: "BNB", price: "612.35", change: "+3.1%", positive: true, sparkline: [20, 18, 22, 25, 30] },
+  { symbol: "ADA", name: "Cardano", price: "0.68", change: "-1.2%", positive: false, sparkline: [35, 38, 32, 36, 34] },
+  { symbol: "DOGE", name: "Dogecoin", price: "0.165", change: "+5.7%", positive: true, sparkline: [15, 18, 20, 25, 28] },
+  { symbol: "DOT", name: "Polkadot", price: "8.42", change: "+0.9%", positive: true, sparkline: [28, 26, 30, 27, 29] },
 ];
 
 const recentActivity = [
@@ -99,6 +122,12 @@ const recentActivity = [
   },
 ];
 
+const learningItems = [
+  { icon: Sparkles, title: "React Advanced Patterns", progress: 70, color: "from-cyan-500 to-teal-400" },
+  { icon: Layers, title: "Next.js App Router", progress: 45, color: "from-emerald-500 to-teal-400" },
+  { icon: Terminal, title: "Rust Basics", progress: 25, color: "from-amber-500 to-orange-400" },
+];
+
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -111,6 +140,37 @@ const item = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
+
+function SparklineChart({ points, positive }: { points: number[]; positive: boolean }) {
+  const width = 48;
+  const height = 20;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+
+  const coords = points.map((p, i) => ({
+    x: (i / (points.length - 1)) * width,
+    y: height - ((p - min) / range) * height,
+  }));
+
+  const pathD = coords
+    .map((c, i) => (i === 0 ? `M${c.x},${c.y}` : `L${c.x},${c.y}`))
+    .join(" ");
+
+  return (
+    <svg width={width} height={height} className="shrink-0" viewBox={`0 0 ${width} ${height}`}>
+      <path
+        d={pathD}
+        fill="none"
+        stroke={positive ? "oklch(0.7 0.17 162)" : "oklch(0.6 0.2 25)"}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.8"
+      />
+    </svg>
+  );
+}
 
 function HighlightedCode({ code }: { code: string }) {
   const rules: { pattern: RegExp; cls: string }[] = [
@@ -196,9 +256,14 @@ function HighlightedCode({ code }: { code: string }) {
           }
 
           return (
-            <div key={lineIdx}>
-              {nodes}
-              {lineIdx < lines.length - 1 ? "\n" : ""}
+            <div key={lineIdx} className="flex code-line-hover rounded-sm px-1 -mx-1 transition-colors duration-150">
+              <span className="inline-block w-6 shrink-0 text-right pr-3 select-none text-muted-foreground/30">
+                {lineIdx + 1}
+              </span>
+              <span className="flex-1">
+                {nodes}
+                {lineIdx < lines.length - 1 ? "\n" : ""}
+              </span>
             </div>
           );
         })}
@@ -248,7 +313,7 @@ export default function Home({ onNavigate }: HomeProps) {
   }, [typedText, isDeleting, phraseIdx]);
 
   return (
-    <main className="relative flex flex-1 flex-col items-center px-6 py-12 overflow-hidden">
+    <main className="relative flex flex-1 flex-col items-center px-6 py-12 overflow-hidden noise-overlay">
       <div className="ambient-grid absolute inset-0 pointer-events-none opacity-40" />
 
       <div
@@ -256,6 +321,15 @@ export default function Home({ onNavigate }: HomeProps) {
         style={{
           background:
             "radial-gradient(ellipse 600px 400px at 20% 10%, oklch(0.7 0.12 170 / 0.06), transparent), radial-gradient(ellipse 500px 500px at 80% 20%, oklch(0.65 0.15 150 / 0.05), transparent), radial-gradient(ellipse 400px 300px at 60% 80%, oklch(0.6 0.1 200 / 0.04), transparent), radial-gradient(ellipse 700px 500px at 10% 70%, oklch(0.75 0.08 130 / 0.04), transparent), radial-gradient(ellipse 500px 600px at 50% 50%, oklch(0.985 0 0 / 0.02), transparent)",
+        }}
+      />
+
+      {/* Breathing glow orb — top-right emerald/teal */}
+      <div
+        className="absolute -top-20 right-[-5%] w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{
+          background: "radial-gradient(circle, oklch(0.6 0.17 162 / 0.25), oklch(0.55 0.14 180 / 0.1), transparent 70%)",
+          animation: "breathe-glow 6s ease-in-out infinite",
         }}
       />
 
@@ -337,7 +411,7 @@ export default function Home({ onNavigate }: HomeProps) {
         >
           <button
             onClick={() => onNavigate("profile")}
-            className="group flex items-center gap-2.5 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
+            className="cta-micro-interact group flex items-center gap-2.5 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:shadow-lg hover:shadow-primary/5"
           >
             <Code2 className="size-4" />
             View Profile
@@ -345,44 +419,62 @@ export default function Home({ onNavigate }: HomeProps) {
           </button>
           <button
             onClick={() => onNavigate("game")}
-            className="group flex items-center gap-2.5 rounded-lg border border-border/60 bg-secondary/10 px-6 py-2.5 text-sm font-medium text-foreground transition-all duration-300 hover:bg-secondary/20 hover:border-border hover:-translate-y-0.5"
+            className="cta-micro-interact group flex items-center gap-2.5 rounded-lg border border-border/60 bg-secondary/10 px-6 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/20 hover:border-border"
           >
             Play Game
           </button>
         </motion.div>
 
+        {/* Tech Stats with tooltips and connectors */}
         <motion.div
           variants={item}
           className="mt-16 grid grid-cols-3 gap-8 text-center sm:gap-12"
         >
           {[
-            { label: "Framework", value: "React 19" },
-            { label: "Language", value: "TypeScript" },
-            { label: "Styling", value: "Tailwind CSS" },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="group flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 transition-all duration-300 hover:scale-105 hover:bg-secondary/30"
-              style={{
-                transition: "transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease",
-              }}
-            >
-              <span className="relative flex items-center gap-2">
-                <span className="size-1 rounded-full bg-emerald-500/60 animate-pulse" />
-                <span className="font-mono text-lg font-semibold text-foreground">
-                  {value}
-                </span>
-              </span>
-              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                {label}
-              </span>
-            </div>
+            { label: "Framework", value: "React 19", tooltip: "Latest version with new compiler" },
+            { label: "Language", value: "TypeScript", tooltip: "Strict type safety" },
+            { label: "Styling", value: "Tailwind CSS", tooltip: "Utility-first CSS framework" },
+          ].map(({ label, value, tooltip }) => (
+            <Tooltip key={label}>
+              <TooltipTrigger asChild>
+                <div
+                  className="stat-connector group flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 transition-all duration-300 hover:scale-105 hover:bg-secondary/30 cursor-default"
+                >
+                  <span className="relative flex items-center gap-2">
+                    <span className="size-1 rounded-full bg-emerald-500/60 animate-pulse" />
+                    <span className="font-mono text-lg font-semibold text-foreground">
+                      {value}
+                    </span>
+                  </span>
+                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                    {label}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-foreground text-background text-[11px] border-0">
+                {tooltip}
+              </TooltipContent>
+            </Tooltip>
           ))}
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          variants={item}
+          className="mt-14 flex flex-col items-center gap-1.5"
+        >
+          <div className="scroll-indicator">
+            <ChevronDown className="size-5 text-muted-foreground/40" />
+          </div>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/30">
+            Scroll
+          </span>
         </motion.div>
       </motion.div>
 
       <Separator className="my-10 w-full max-w-3xl opacity-30" />
 
+      {/* Code Terminal with line numbers and language badge */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -400,6 +492,12 @@ export default function Home({ onNavigate }: HomeProps) {
               <span className="ml-2 text-[11px] font-mono text-muted-foreground/60">
                 App.tsx
               </span>
+              <Badge
+                variant="outline"
+                className="ml-2 h-4 px-1.5 text-[9px] font-mono border-emerald-500/30 text-emerald-400/70 bg-emerald-500/5"
+              >
+                TSX
+              </Badge>
             </div>
             <button
               onClick={handleCopy}
@@ -440,6 +538,7 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
+      {/* Crypto Ticker with sparklines and Live indicator */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -447,9 +546,20 @@ export default function Home({ onNavigate }: HomeProps) {
         className="relative mb-4 w-full max-w-3xl"
       >
         <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
-            <TrendingUp className="size-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Crypto Market</span>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="size-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Crypto Market</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-medium">
+                Live
+              </span>
+            </div>
           </div>
           <div className="relative">
             <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 bg-gradient-to-r from-card/80 to-transparent" />
@@ -478,6 +588,7 @@ export default function Home({ onNavigate }: HomeProps) {
                       </span>
                     </div>
                   </div>
+                  <SparklineChart points={coin.sparkline} positive={coin.positive} />
                 </div>
               ))}
             </div>
@@ -487,6 +598,7 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
+      {/* Recent Activity */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -526,6 +638,53 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
+      {/* What I'm Learning Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.65, duration: 0.5, ease: "easeOut" }}
+        className="relative mb-4 w-full max-w-3xl"
+      >
+        <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
+            <BookOpen className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">What I&apos;m Learning</span>
+          </div>
+          <div className="divide-y divide-border/20">
+            {learningItems.map((item, idx) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.75 + idx * 0.12, duration: 0.4 }}
+                className="flex items-center gap-4 px-4 py-3.5"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground">
+                  <item.icon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-foreground/90">{item.title}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">{item.progress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/40">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.progress}%` }}
+                      transition={{ delay: 0.85 + idx * 0.12, duration: 0.8, ease: "easeOut" }}
+                      className={`h-full rounded-full bg-gradient-to-r ${item.color}`}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      <Separator className="my-8 w-full max-w-3xl opacity-30" />
+
+      {/* Feature Cards with icon glow and complexity badges */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -541,13 +700,21 @@ export default function Home({ onNavigate }: HomeProps) {
             className="group rounded-lg border border-border/30 bg-card/30 p-4 transition-all duration-300 hover:border-transparent hover:bg-card/50 hover:gradient-border hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5"
           >
             <div className="flex items-start gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary/50 text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
+              <div className={`flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary/50 text-muted-foreground transition-all duration-300 group-hover:text-foreground ${feature.glowClass}`}>
                 <feature.icon className="size-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-foreground">
-                  {feature.title}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-foreground">
+                    {feature.title}
+                  </h3>
+                  <Badge
+                    variant="outline"
+                    className={`h-4 px-1.5 text-[8px] uppercase tracking-wider font-medium ${complexityColors[feature.complexity]}`}
+                  >
+                    {feature.complexity}
+                  </Badge>
+                </div>
                 <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
@@ -560,6 +727,7 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="mb-8 w-full max-w-3xl opacity-30" />
 
+      {/* Quick Links with gradient sweep and dot pattern */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -569,7 +737,7 @@ export default function Home({ onNavigate }: HomeProps) {
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <button
             onClick={() => onNavigate("profile")}
-            className="group flex items-center gap-3 rounded-lg border border-border/30 bg-card/30 px-6 py-3 transition-all duration-300 hover:border-emerald-500/30 hover:bg-card/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-500/5"
+            className="hover-gradient-sweep group flex items-center gap-3 rounded-lg border border-border/30 bg-card/30 px-6 py-3 dot-pattern transition-all duration-300 hover:border-emerald-500/30 hover:bg-card/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-500/5"
           >
             <div className="flex size-10 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground transition-colors duration-300 group-hover:text-emerald-400 group-hover:bg-emerald-500/10">
               <User className="size-5" />
@@ -582,7 +750,7 @@ export default function Home({ onNavigate }: HomeProps) {
           </button>
           <button
             onClick={() => onNavigate("game")}
-            className="group flex items-center gap-3 rounded-lg border border-border/30 bg-card/30 px-6 py-3 transition-all duration-300 hover:border-teal-500/30 hover:bg-card/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-teal-500/5"
+            className="hover-gradient-sweep group flex items-center gap-3 rounded-lg border border-border/30 bg-card/30 px-6 py-3 dot-pattern transition-all duration-300 hover:border-teal-500/30 hover:bg-card/50 hover:-translate-y-0.5 hover:shadow-md hover:shadow-teal-500/5"
           >
             <div className="flex size-10 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground transition-colors duration-300 group-hover:text-teal-400 group-hover:bg-teal-500/10">
               <Gamepad2 className="size-5" />
