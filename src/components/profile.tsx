@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
+import { useState, useEffect, useRef, useCallback, FormEvent, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,15 @@ import {
   Zap,
   ChevronDown,
   Quote,
+  Coffee,
+  Moon,
+  Gamepad2,
+  BookOpenCheck,
+  Bug,
+  Sparkles,
+  Database,
+  Server,
+  Smartphone,
 } from "lucide-react";
 
 /* ────────────── Data ────────────── */
@@ -53,6 +62,15 @@ const skills = [
   { name: "JavaScript", level: 80, description: "React, Node.js, web development" },
   { name: "TypeScript", level: 75, description: "Type-safe applications, interfaces" },
   { name: "SQL", level: 70, description: "Database design, queries, optimization" },
+];
+
+const radarSkills = [
+  { label: "Frontend", value: 82 },
+  { label: "Backend", value: 68 },
+  { label: "Algorithms", value: 90 },
+  { label: "DevOps", value: 55 },
+  { label: "Database", value: 75 },
+  { label: "Mobile", value: 40 },
 ];
 
 const interests = [
@@ -178,6 +196,41 @@ const socialLinks = [
 
 const learningItems = ["React", "TypeScript", "Next.js", "Algorithms"];
 
+const funFacts = [
+  { emoji: "🐛", text: "Debugged 10,000+ lines of code", back: "Mostly at 2 AM with a cup of coffee in hand. The best bugs always hide in the most obvious places." },
+  { emoji: "☕", text: "Consumed 1,024 cups of coffee", back: "That's approximately 2.8 cups per day over the past year. Double espresso is the fuel of choice." },
+  { emoji: "🌙", text: "Best coding hours: 11 PM – 3 AM", back: "The night is peaceful, distractions are zero, and that's when the best algorithms are born." },
+  { emoji: "🎮", text: "Built first game at age 14", back: "A simple Python text adventure game. It had 20 rooms and a dragon boss. Nostalgia!" },
+  { emoji: "📚", text: "Read 50+ tech articles this year", back: "From MDN docs to obscure RFCs. Strong opinions, loosely held, and always learning." },
+];
+
+const pinnedRepos = [
+  {
+    name: "CryptoTracker",
+    description: "Real-time cryptocurrency portfolio tracker with price alerts, performance analytics, and multi-exchange support.",
+    language: { name: "Python", color: "#3572A5" },
+    stars: 128,
+    forks: 34,
+    updated: "2 days ago",
+  },
+  {
+    name: "algo-trade-engine",
+    description: "High-performance algorithmic trading engine with backtesting framework and live execution support.",
+    language: { name: "TypeScript", color: "#3178c6" },
+    stars: 89,
+    forks: 17,
+    updated: "1 week ago",
+  },
+  {
+    name: "fin-dash-react",
+    description: "Interactive financial dashboard built with React, featuring candlestick charts and 20+ technical indicators.",
+    language: { name: "JavaScript", color: "#f1e05a" },
+    stars: 56,
+    forks: 12,
+    updated: "3 days ago",
+  },
+];
+
 /* ────────────── Animation Variants ────────────── */
 
 const container = {
@@ -291,7 +344,6 @@ function CyclingText({ items, interval = 2000 }: { items: string[]; interval?: n
           setDisplayed(current.slice(0, displayed.length - 1));
         }, 40);
       } else {
-        // Wrap in setTimeout to avoid synchronous setState in effect
         timeout = setTimeout(() => {
           setIsDeleting(false);
           setCurrentIndex((prev) => (prev + 1) % items.length);
@@ -347,6 +399,302 @@ function StatCard({ stat }: { stat: typeof statsData[number] }) {
   );
 }
 
+/* ────────────── Scroll Reveal Hook ────────────── */
+
+function useScrollReveal(threshold = 0.12) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, visible };
+}
+
+function ScrollRevealSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const { ref, visible } = useScrollReveal();
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 28 }}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
+      transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94], delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function GradientSeparator() {
+  return <hr className="gradient-separator my-2" />;
+}
+
+/* ────────────── Radar Chart ────────────── */
+
+function RadarChart() {
+  const { ref, visible } = useScrollReveal(0.25);
+  const [tooltip, setTooltip] = useState<{ label: string; value: number; x: number; y: number } | null>(null);
+  const size = 220;
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = 85;
+  const levels = 4;
+  const n = radarSkills.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  function polarToCart(angle: number, r: number) {
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+
+  const gridLines = useMemo(() => {
+    const lines: string[] = [];
+    for (let l = 1; l <= levels; l++) {
+      const r = (maxR / levels) * l;
+      const pts: string[] = [];
+      for (let i = 0; i < n; i++) {
+        const p = polarToCart(startAngle + i * angleStep, r);
+        pts.push(`${p.x},${p.y}`);
+      }
+      lines.push(pts.join(" "));
+    }
+    return lines;
+  }, []);
+
+  const axisLines = useMemo(() => {
+    const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      const p = polarToCart(startAngle + i * angleStep, maxR);
+      lines.push({ x1: cx, y1: cy, x2: p.x, y2: p.y });
+    }
+    return lines;
+  }, []);
+
+  const dataPoints = useMemo(() => {
+    return radarSkills.map((s, i) => {
+      const r = (s.value / 100) * maxR;
+      return polarToCart(startAngle + i * angleStep, r);
+    });
+  }, []);
+
+  const dataPath = dataPoints.map((p) => `${p.x},${p.y}`).join(" ");
+
+  const labelPositions = radarSkills.map((s, i) => {
+    const r = maxR + 16;
+    return polarToCart(startAngle + i * angleStep, r);
+  });
+
+  return (
+    <div ref={ref} className="flex justify-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="overflow-visible">
+        {/* Grid */}
+        {gridLines.map((pts, i) => (
+          <polygon key={i} points={pts} fill="none" stroke="oklch(1 0 0 / 8%)" strokeWidth="1" />
+        ))}
+        {/* Axes */}
+        {axisLines.map((l, i) => (
+          <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="oklch(1 0 0 / 6%)" strokeWidth="1" />
+        ))}
+        {/* Data shape */}
+        {visible && (
+          <>
+            <polygon
+              points={dataPath}
+              fill="oklch(0.7 0.15 160 / 15%)"
+              stroke="oklch(0.7 0.15 160 / 70%)"
+              strokeWidth="2"
+              className="radar-shape-animate"
+            />
+            <polygon
+              points={dataPath}
+              fill="oklch(0.7 0.15 160 / 10%)"
+              className="radar-fill-animate"
+            />
+          </>
+        )}
+        {/* Data points */}
+        {visible && dataPoints.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="3.5"
+            fill="oklch(0.7 0.15 160)"
+            stroke="oklch(0.155 0 0)"
+            strokeWidth="1.5"
+            className="radar-fill-animate"
+            onMouseEnter={() => setTooltip({ label: radarSkills[i].label, value: radarSkills[i].value, x: p.x, y: p.y })}
+            onMouseLeave={() => setTooltip(null)}
+            style={{ cursor: "pointer" }}
+          />
+        ))}
+        {/* Labels */}
+        {labelPositions.map((p, i) => (
+          <text
+            key={i}
+            x={p.x}
+            y={p.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="text-[9px] fill-muted-foreground/70 select-none"
+            style={{ fontSize: "9px" }}
+          >
+            {radarSkills[i].label}
+          </text>
+        ))}
+        {/* Tooltip */}
+        {tooltip && (
+          <g>
+            <rect
+              x={tooltip.x - 30}
+              y={tooltip.y - 28}
+              width={60}
+              height={22}
+              rx={4}
+              fill="oklch(0.2 0 0)"
+              stroke="oklch(1 0 0 / 10%)"
+              strokeWidth="1"
+            />
+            <text
+              x={tooltip.x}
+              y={tooltip.y - 14}
+              textAnchor="middle"
+              className="text-[9px] fill-emerald-400 select-none"
+              style={{ fontSize: "9px", fontWeight: 600 }}
+            >
+              {tooltip.label} {tooltip.value}%
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+/* ────────────── Coding Streak Calendar ────────────── */
+
+function CodingStreakCalendar() {
+  const { ref, visible } = useScrollReveal(0.15);
+  const weeks = 12;
+  const days = 7;
+
+  // Deterministic pseudo-random using simple seed
+  const calendarData = useMemo(() => {
+    const data: number[][] = [];
+    let seed = 42;
+    for (let w = 0; w < weeks; w++) {
+      const row: number[] = [];
+      for (let d = 0; d < days; d++) {
+        seed = (seed * 16807 + 0) % 2147483647;
+        const val = (seed % 100) / 100;
+        // Make weekends and recent weeks more active
+        const recencyBoost = w > 8 ? 0.15 : 0;
+        const weekendBoost = d === 0 || d === 6 ? -0.1 : 0.05;
+        row.push(Math.max(0, Math.min(1, val + recencyBoost + weekendBoost)));
+      }
+      data.push(row);
+    }
+    return data;
+  }, []);
+
+  const monthLabels = useMemo(() => {
+    const now = new Date();
+    const months: string[] = [];
+    for (let i = weeks - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 7);
+      months.push(d.toLocaleString("en-US", { month: "short" }));
+    }
+    return months;
+  }, []);
+
+  const getColor = (val: number) => {
+    if (val < 0.15) return "oklch(1 0 0 / 4%)";
+    if (val < 0.35) return "oklch(0.7 0.15 160 / 25%)";
+    if (val < 0.55) return "oklch(0.7 0.15 160 / 45%)";
+    if (val < 0.75) return "oklch(0.7 0.15 160 / 65%)";
+    return "oklch(0.7 0.15 160 / 90%)";
+  };
+
+  const totalContributions = useMemo(() => {
+    return calendarData.flat().filter((v) => v >= 0.55).length;
+  }, [calendarData]);
+
+  return (
+    <div ref={ref} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-muted-foreground/60">
+          {totalContributions} active days in last 12 weeks
+        </span>
+      </div>
+      {/* Month labels */}
+      <div className="flex gap-[3px] pl-0">
+        {monthLabels.map((m, i) => (
+          <span key={i} className="text-[8px] text-muted-foreground/40 flex-1 truncate">
+            {i % 2 === 0 ? m : ""}
+          </span>
+        ))}
+      </div>
+      {/* Day labels + grid */}
+      <div className="flex gap-1">
+        <div className="flex flex-col gap-[3px] shrink-0 pt-0">
+          {["", "Mon", "", "Wed", "", "Fri", ""].map((d, i) => (
+            <span key={i} className="text-[8px] text-muted-foreground/30 h-[11px] flex items-center leading-none">
+              {d}
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-[3px] flex-1">
+          {calendarData.map((week, wIdx) => (
+            <div key={wIdx} className="flex flex-col gap-[3px]">
+              {week.map((val, dIdx) => (
+                <motion.div
+                  key={`${wIdx}-${dIdx}`}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={visible ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                  transition={{
+                    delay: (wIdx * 7 + dIdx) * 0.008,
+                    duration: 0.2,
+                    ease: "easeOut",
+                  }}
+                  className="calendar-cell"
+                  style={{ backgroundColor: getColor(val) }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Legend */}
+      <div className="flex items-center justify-end gap-1.5">
+        <span className="text-[9px] text-muted-foreground/40">Less</span>
+        {[0.05, 0.25, 0.45, 0.65, 0.85].map((l, i) => (
+          <div
+            key={i}
+            className="size-[10px] rounded-[2px]"
+            style={{ backgroundColor: getColor(l) }}
+          />
+        ))}
+        <span className="text-[9px] text-muted-foreground/40">More</span>
+      </div>
+    </div>
+  );
+}
+
 /* ────────────── Main Component ────────────── */
 
 export default function Profile() {
@@ -356,8 +704,17 @@ export default function Profile() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [preferredContact, setPreferredContact] = useState("email");
   const [avatarHovered, setAvatarHovered] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const [timelineVisible, setTimelineVisible] = useState(false);
+  const [flippedFact, setFlippedFact] = useState<number | null>(null);
+
+  // Parallax scroll offset for avatar
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // IntersectionObserver for timeline line animation
   useEffect(() => {
@@ -385,28 +742,27 @@ export default function Profile() {
     }, 3000);
   }
 
+  const parallaxOffset = Math.min(scrollY * 0.15, 20);
+
   return (
     <main className="relative flex flex-1 items-start justify-center px-4 py-16 sm:px-6">
       <div className="ambient-grid absolute inset-0 pointer-events-none opacity-30" />
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="relative w-full max-w-2xl space-y-5"
-      >
+      <div className="relative w-full max-w-2xl space-y-6">
+
         {/* ═══════════ 1. Avatar & Header ═══════════ */}
-        <motion.div variants={item}>
+        <ScrollRevealSection>
           <Card className="border-border/40 bg-card/40 overflow-hidden">
             <div className="h-20 bg-gradient-to-r from-secondary/80 via-secondary/40 to-secondary/80" />
             <CardHeader className="-mt-8">
               <CardTitle className="flex items-center gap-4 text-xl">
-                <div className="relative">
+                <div className="relative" style={{ transform: `translateY(${parallaxOffset}px)` }}>
+                  {/* Pulse ring */}
+                  <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-400/20 avatar-pulse-ring" />
                   {/* Rainbow shimmer ring on hover */}
                   <div
                     className={`absolute -inset-0.5 rounded-full transition-opacity duration-500 ${
                       avatarHovered ? "rainbow-ring opacity-100" : "animate-spin-slow opacity-70 bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400"
                     }`}
-                    style={!avatarHovered ? {} : {}}
                   />
                   <div
                     className={`absolute -inset-1 rounded-full blur-[2px] transition-opacity duration-500 ${
@@ -414,7 +770,7 @@ export default function Profile() {
                     }`}
                   />
                   <div
-                    className="relative flex size-16 items-center justify-center rounded-full border-2 border-background bg-secondary text-lg font-bold text-foreground shadow-lg cursor-pointer"
+                    className="relative flex size-16 items-center justify-center rounded-full border-2 border-background bg-secondary text-lg font-bold text-foreground shadow-lg cursor-pointer transition-shadow duration-300 hover:shadow-emerald-500/20 hover:shadow-xl"
                     onMouseEnter={() => setAvatarHovered(true)}
                     onMouseLeave={() => setAvatarHovered(false)}
                   >
@@ -422,7 +778,7 @@ export default function Profile() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span>陳家盛</span>
+                  <span className="text-xl font-semibold tracking-tight">陳家盛</span>
                   <span className="text-sm font-normal text-muted-foreground">Chen Jia-Sheng</span>
                   {/* Status indicator */}
                   <div className="flex items-center gap-2 mt-0.5">
@@ -487,13 +843,15 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
 
         {/* ═══════════ 2. Stats Overview ═══════════ */}
-        <motion.div variants={item}>
+        <ScrollRevealSection delay={0.05}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <User className="size-4 text-muted-foreground" />
                 Stats Overview
               </CardTitle>
@@ -506,13 +864,32 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 3. Technical Skills ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 3. Skills Radar Chart ═══════════ */}
+        <ScrollRevealSection delay={0.08}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Sparkles className="size-4 text-muted-foreground" />
+                Skills Radar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadarChart />
+            </CardContent>
+          </Card>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
+
+        {/* ═══════════ 4. Technical Skills ═══════════ */}
+        <ScrollRevealSection delay={0.1}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Code2 className="size-4 text-muted-foreground" />
                 Technical Skills
               </CardTitle>
@@ -521,13 +898,7 @@ export default function Profile() {
               {skills.map((skill, idx) => {
                 const badge = getSkillBadge(skill.level);
                 return (
-                  <motion.div
-                    key={skill.name}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + idx * 0.1, duration: 0.3 }}
-                    className="space-y-2 group"
-                  >
+                  <div key={skill.name} className="space-y-2 group">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{skill.name}</span>
@@ -563,18 +934,69 @@ export default function Profile() {
                     <p className="text-xs text-muted-foreground/70 transition-all duration-300 group-hover:text-muted-foreground group-hover:font-medium">
                       {skill.description}
                     </p>
-                  </motion.div>
+                  </div>
                 );
               })}
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 4. Interests ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 5. Fun Facts ═══════════ */}
+        <ScrollRevealSection delay={0.12}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Coffee className="size-4 text-muted-foreground" />
+                Fun Facts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {funFacts.map((fact, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ delay: idx * 0.08, duration: 0.4 }}
+                  >
+                    <div
+                      className="flip-card h-[120px] cursor-pointer"
+                      onClick={() => setFlippedFact(flippedFact === idx ? null : idx)}
+                    >
+                      <div className={`flip-card-inner ${flippedFact === idx ? "flipped" : ""}`}>
+                        {/* Front */}
+                        <div className="flip-card-front rounded-lg border border-border/30 bg-secondary/5 p-4 flex flex-col items-center justify-center gap-2 text-center">
+                          <span className="text-2xl">{fact.emoji}</span>
+                          <span className="text-xs font-medium text-foreground/90 leading-snug">{fact.text}</span>
+                        </div>
+                        {/* Back */}
+                        <div className="flip-card-back rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center justify-center text-center">
+                          <p className="text-[11px] text-muted-foreground/80 leading-relaxed px-1">
+                            {fact.back}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground/40 mt-3">
+                Hover or tap to flip
+              </p>
+            </CardContent>
+          </Card>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
+
+        {/* ═══════════ 6. Interests ═══════════ */}
+        <ScrollRevealSection delay={0.15}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <TrendingUp className="size-4 text-muted-foreground" />
                 Interests
               </CardTitle>
@@ -582,11 +1004,8 @@ export default function Profile() {
             <CardContent>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {interests.map((interest, idx) => (
-                  <motion.div
+                  <div
                     key={interest.name}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.6 + idx * 0.1, duration: 0.3 }}
                     className="group relative flex items-start gap-3 rounded-lg border border-border/30 bg-secondary/10 px-3 py-3 transition-all duration-300 hover:border-border/60 hover:bg-gradient-to-br hover:from-emerald-500/5 hover:via-teal-500/5 hover:to-cyan-500/5 cursor-pointer"
                     onClick={() =>
                       setExpandedInterest((prev) =>
@@ -642,19 +1061,84 @@ export default function Profile() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 5. Projects ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 7. Pinned Repositories ═══════════ */}
+        <ScrollRevealSection delay={0.18}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <GitBranch className="size-4 text-muted-foreground" />
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                  <GitBranch className="size-4 text-muted-foreground" />
+                  Pinned Repositories
+                </CardTitle>
+                <Badge variant="outline" className="text-[10px] font-normal">
+                  Custom
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pinnedRepos.map((repo, idx) => (
+                <motion.div
+                  key={repo.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: idx * 0.08, duration: 0.35 }}
+                  className="pinned-repo-card rounded-lg border border-border/30 bg-secondary/5 p-4 cursor-pointer"
+                >
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="size-3.5 text-muted-foreground/50 shrink-0" />
+                          <h4 className="text-sm font-semibold text-emerald-400/90 truncate">{repo.name}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2">
+                          {repo.description}
+                        </p>
+                      </div>
+                      <a href="#" className="shrink-0 flex size-7 items-center justify-center rounded-md border border-border/30 text-muted-foreground/40 transition-all duration-200 hover:border-border/60 hover:text-foreground">
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-4 text-[11px] text-muted-foreground/50">
+                      <span className="flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-full" style={{ backgroundColor: repo.language.color }} />
+                        {repo.language.name}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Star className="size-3" />
+                        {repo.stars}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <GitBranch className="size-3" />
+                        {repo.forks}
+                      </span>
+                      <span className="ml-auto text-muted-foreground/35">{repo.updated}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </CardContent>
+          </Card>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
+
+        {/* ═══════════ 8. Projects ═══════════ */}
+        <ScrollRevealSection delay={0.2}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <FolderGit2 className="size-4 text-muted-foreground" />
                 Projects
               </CardTitle>
             </CardHeader>
@@ -663,8 +1147,9 @@ export default function Profile() {
                 <motion.div
                   key={project.name}
                   initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + idx * 0.1, duration: 0.3 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: idx * 0.08, duration: 0.3 }}
                   className="group rounded-lg border border-border/30 bg-secondary/5 p-4 transition-all duration-300 hover:border-border/60 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20"
                   style={{
                     backgroundImage: "linear-gradient(135deg, transparent, transparent)",
@@ -728,13 +1213,15 @@ export default function Profile() {
               ))}
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
 
         {/* ═══════════ GitHub Stats ═══════════ */}
-        <motion.div variants={item}>
+        <ScrollRevealSection delay={0.22}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Github className="size-4 text-muted-foreground" />
                 GitHub Stats
               </CardTitle>
@@ -756,13 +1243,32 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 6. Contact Form ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 9. Coding Streak Calendar ═══════════ */}
+        <ScrollRevealSection delay={0.25}>
+          <Card className="border-border/40 bg-card/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Zap className="size-4 text-muted-foreground" />
+                Coding Streak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CodingStreakCalendar />
+            </CardContent>
+          </Card>
+        </ScrollRevealSection>
+
+        <GradientSeparator />
+
+        {/* ═══════════ 10. Contact Form ═══════════ */}
+        <ScrollRevealSection delay={0.28}>
           <Card className="border-border/40 bg-card/40 overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Mail className="size-4 text-muted-foreground" />
                 Contact
               </CardTitle>
@@ -896,13 +1402,15 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 8. Testimonials ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 11. Testimonials ═══════════ */}
+        <ScrollRevealSection delay={0.3}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Quote className="size-4 text-muted-foreground" />
                 Testimonials
               </CardTitle>
@@ -912,8 +1420,9 @@ export default function Profile() {
                 <motion.div
                   key={t.name}
                   initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.9 + idx * 0.15, duration: 0.4 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: idx * 0.12, duration: 0.4 }}
                   className="relative rounded-lg border border-border/30 bg-secondary/5 p-4 pl-5"
                 >
                   {/* Left accent border */}
@@ -934,13 +1443,15 @@ export default function Profile() {
               ))}
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollRevealSection>
 
-        {/* ═══════════ 7. Timeline ═══════════ */}
-        <motion.div variants={item}>
+        <GradientSeparator />
+
+        {/* ═══════════ 12. Timeline ═══════════ */}
+        <ScrollRevealSection delay={0.32}>
           <Card className="border-border/40 bg-card/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Calendar className="size-4 text-muted-foreground" />
                 Timeline
               </CardTitle>
@@ -1054,8 +1565,8 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </ScrollRevealSection>
+      </div>
     </main>
   );
 }

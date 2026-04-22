@@ -40,6 +40,9 @@ import {
   Award,
   Moon,
   Handshake,
+  Info,
+  ChevronUp,
+  Gauge,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -47,6 +50,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 // ────────────────────────────────────────
 // Audio
@@ -139,6 +147,7 @@ interface GameSettings {
   boardTheme: BoardTheme;
   showMoveNumbers: boolean;
   soundVolume: number;
+  speedMode: boolean;
 }
 
 interface MoveEntry {
@@ -183,6 +192,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   boardTheme: "minimal",
   showMoveNumbers: false,
   soundVolume: 80,
+  speedMode: false,
 };
 
 const ACHIEVEMENTS: Achievement[] = [
@@ -273,6 +283,10 @@ function loadSettings(): GameSettings {
         typeof parsed.soundVolume === "number"
           ? parsed.soundVolume
           : DEFAULT_SETTINGS.soundVolume,
+      speedMode:
+        typeof parsed.speedMode === "boolean"
+          ? parsed.speedMode
+          : DEFAULT_SETTINGS.speedMode,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -616,9 +630,17 @@ export default function TicTacToe() {
   // Touch feedback
   const [touchDownCell, setTouchDownCell] = useState<number | null>(null);
 
+  // Speed mode: countdown per move
+  const [speedCountdown, setSpeedCountdown] = useState<number>(10);
+  const [flashCell, setFlashCell] = useState<number | null>(null);
+
+  // Score change glow keys
+  const [scoreGlowKey, setScoreGlowKey] = useState(0);
+
   const boardRef = useRef<HTMLDivElement>(null);
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsLoadedRef = useRef(false);
+  const speedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const status = getGameStatus(board);
   const vol = settings.soundVolume / 100;
@@ -642,6 +664,7 @@ export default function TicTacToe() {
     return () => {
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
       if (replayTimerRef.current) clearInterval(replayTimerRef.current);
+      if (speedTimerRef.current) clearInterval(speedTimerRef.current);
     };
   }, []);
 
@@ -655,6 +678,60 @@ export default function TicTacToe() {
     }, 1000);
     return () => clearInterval(interval);
   }, [gameStartTime]);
+
+  // Speed mode countdown timer — uses triggerAIMove ref to avoid declaration order issue
+  const triggerAIMoveRef = useRef<((board: Board, history: MoveEntry[]) => void) | null>(null);
+
+  const handleSpeedTimeout = useCallback(() => {
+    if (status !== "playing") return;
+    if (gameMode === "ai" && (currentPlayer !== "X" || aiThinking)) return;
+    // Pass turn to other player
+    const nextPlayer = currentPlayer === "X" ? "O" : "X";
+    setCurrentPlayer(nextPlayer);
+    setSpeedCountdown(10);
+    if (gameMode === "ai" && nextPlayer === "O") {
+      // Give AI its own timer
+      triggerAIMoveRef.current?.(board, moveHistory);
+    }
+  }, [status, gameMode, currentPlayer, aiThinking, board, moveHistory]);
+
+  useEffect(() => {
+    if (!settings.speedMode || status !== "playing" || !gameStartTime) {
+      if (speedTimerRef.current) {
+        clearInterval(speedTimerRef.current);
+        speedTimerRef.current = null;
+      }
+      setSpeedCountdown(10);
+      return;
+    }
+    // In AI mode, only run countdown for X's turn
+    if (gameMode === "ai" && (currentPlayer !== "X" || aiThinking)) {
+      if (speedTimerRef.current) {
+        clearInterval(speedTimerRef.current);
+        speedTimerRef.current = null;
+      }
+      return;
+    }
+    setSpeedCountdown(10);
+    speedTimerRef.current = setInterval(() => {
+      setSpeedCountdown((prev) => {
+        if (prev <= 1) {
+          if (speedTimerRef.current) clearInterval(speedTimerRef.current);
+          speedTimerRef.current = null;
+          // Use setTimeout to avoid state update in interval callback
+          setTimeout(() => handleSpeedTimeout(), 0);
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (speedTimerRef.current) {
+        clearInterval(speedTimerRef.current);
+        speedTimerRef.current = null;
+      }
+    };
+  }, [settings.speedMode, status, gameStartTime, gameMode, currentPlayer, aiThinking, moveHistory.length, handleSpeedTimeout]);
 
   useEffect(() => {
     if (status === "won" && winLine.length > 0) {
@@ -845,6 +922,8 @@ export default function TicTacToe() {
       checkAchievements(winResult, isDraw, moveCount ?? moveHistory.length, currentWinner);
 
       if (winResult) {
+        // Score glow trigger
+        setScoreGlowKey((k) => k + 1);
         // Victory Fanfare for Hard difficulty wins
         if (gameMode === "ai" && difficulty === "hard") {
           if (soundEnabled) playVictoryFanfare(vol);
@@ -889,6 +968,8 @@ export default function TicTacToe() {
           ...prev,
         ].slice(0, 10));
       } else if (isDraw) {
+        // Score glow trigger
+        setScoreGlowKey((k) => k + 1);
         if (soundEnabled) playDrawSound(vol);
         setScore((prev) => ({ ...prev, draw: prev.draw + 1 }));
         setGamesPlayed((prev) => prev + 1);
@@ -956,6 +1037,11 @@ export default function TicTacToe() {
     [difficulty, applyMove, finishGame, soundEnabled, vol]
   );
 
+  // Keep ref in sync for speed mode timeout handler
+  useEffect(() => {
+    triggerAIMoveRef.current = triggerAIMove;
+  }, [triggerAIMove]);
+
   const handleCellClick = useCallback(
     (index: number) => {
       resumeAudio();
@@ -983,7 +1069,9 @@ export default function TicTacToe() {
       setBoard(newBoard);
       setMoveHistory(newHistory);
       setRippleCell(index);
+      setFlashCell(index);
       setTimeout(() => setRippleCell(null), 600);
+      setTimeout(() => setFlashCell(null), 800);
 
       if (soundEnabled) playPlaceSound(vol);
 
@@ -992,6 +1080,7 @@ export default function TicTacToe() {
       } else {
         const nextPlayer = currentPlayer === "X" ? "O" : "X";
         setCurrentPlayer(nextPlayer);
+        setSpeedCountdown(10); // Reset speed timer on move
         if (gameMode === "ai" && nextPlayer === "O") {
           triggerAIMove(newBoard, newHistory);
         }
@@ -1080,6 +1169,10 @@ export default function TicTacToe() {
       clearTimeout(aiTimeoutRef.current);
       aiTimeoutRef.current = null;
     }
+    if (speedTimerRef.current) {
+      clearInterval(speedTimerRef.current);
+      speedTimerRef.current = null;
+    }
     setAiThinking(false);
     setBoard(Array(9).fill(null));
     setCurrentPlayer("X");
@@ -1090,6 +1183,8 @@ export default function TicTacToe() {
     setElapsedSeconds(0);
     setConfettiParticles([]);
     setLastGameResult(null);
+    setSpeedCountdown(10);
+    setFlashCell(null);
   }, []);
 
   const handleResetWithRecap = useCallback(() => {
@@ -1127,6 +1222,7 @@ export default function TicTacToe() {
     setGameHistory([]);
     setGameCounter(0);
     setUnlockedAchievements(new Set());
+    setScoreGlowKey(0);
   }, [handleReset]);
 
   useEffect(() => {
@@ -1307,6 +1403,26 @@ export default function TicTacToe() {
 
   // Timeline moves (last 9)
   const timelineMoves = moveHistory.slice(-9);
+
+  // Streak data from game history
+  const streakResults = gameHistory.slice(0, 10).reverse().map((g) => g.result);
+
+  // Mini board states for timeline visualization
+  const miniBoardStates = moveHistory.slice(-9).map((_, moveIdx) => {
+    const b: CellValue[] = Array(9).fill(null);
+    const startIdx = moveHistory.length - 9 > 0 ? moveHistory.length - 9 : 0;
+    for (let i = startIdx; i <= startIdx + moveIdx; i++) {
+      if (moveHistory[i]) b[moveHistory[i].index] = moveHistory[i].player;
+    }
+    return b;
+  });
+
+  // Section visibility refs
+  const [sectionsVisible, setSectionsVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSectionsVisible(true), 300);
+    return () => clearTimeout(t);
+  }, []);
 
   // ────────────────────────────────────────
   // Thinking dots component
@@ -1581,6 +1697,23 @@ export default function TicTacToe() {
                 <span>100%</span>
               </div>
             </div>
+
+            {/* Speed Mode */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gauge className="size-3.5 text-muted-foreground/50" />
+                <div className="flex flex-col">
+                  <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground/60">
+                    Speed Mode
+                  </label>
+                  <span className="text-[10px] text-muted-foreground/40">10s per move</span>
+                </div>
+              </div>
+              <Switch
+                checked={settings.speedMode}
+                onCheckedChange={(v) => { updateSettings({ speedMode: v }); playUIClick(); }}
+              />
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1593,9 +1726,49 @@ export default function TicTacToe() {
       >
         {/* Title */}
         <div className="text-center">
-          <h1 className="mb-1 text-2xl font-bold tracking-tight glow-text">
-            Tic-Tac-Toe
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="mb-1 text-2xl font-bold tracking-tight glow-text">
+              Tic-Tac-Toe
+            </h1>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="inline-flex size-6 items-center justify-center rounded-full border border-border/30 bg-secondary/10 text-muted-foreground/50 transition-colors hover:text-foreground hover:border-border/50 hover:bg-secondary/20">
+                  <Info className="size-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="center" className="w-72 border-border/40 bg-card/95 backdrop-blur-xl p-4">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5">Controls</h4>
+                    <div className="space-y-1 text-[11px] text-muted-foreground">
+                      <p><span className="font-mono text-foreground/70">Click / Touch</span> — Place your mark</p>
+                      <p><span className="font-mono text-foreground/70">Arrow Keys</span> — Navigate cells</p>
+                      <p><span className="font-mono text-foreground/70">Enter / Space</span> — Confirm placement</p>
+                      <p><span className="font-mono text-foreground/70">1-9 Numpad</span> — Direct cell select</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5">Game Modes</h4>
+                    <div className="space-y-1 text-[11px] text-muted-foreground">
+                      <p><span className="font-mono text-foreground/70">2 Players</span> — Local multiplayer</p>
+                      <p><span className="font-mono text-foreground/70">vs AI</span> — Play against computer</p>
+                      <p className="text-muted-foreground/50">AI Difficulty: Easy / Medium / Hard</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5">Shortcuts</h4>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                      <span><kbd className="rounded border border-border/30 bg-secondary/20 px-1 py-0.5 font-mono text-[10px]">N</kbd> New Game</span>
+                      <span><kbd className="rounded border border-border/30 bg-secondary/20 px-1 py-0.5 font-mono text-[10px]">T</kbd> Theme</span>
+                      <span><kbd className="rounded border border-border/30 bg-secondary/20 px-1 py-0.5 font-mono text-[10px]">Ctrl+Z</kbd> Undo</span>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <p className="text-sm text-muted-foreground font-mono">
             Classic strategy game
           </p>
@@ -1681,7 +1854,7 @@ export default function TicTacToe() {
 
         {/* Scoreboard */}
         <div className="flex w-full items-center gap-3">
-          <Card className="flex-1 border-border/40 bg-card/40">
+          <Card className="flex-1 scoreboard-gradient border-border/40 bg-card/40">
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-5 text-sm">
@@ -1689,27 +1862,45 @@ export default function TicTacToe() {
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                       {gameMode === "ai" ? "You (X)" : "Player X"}
                     </span>
-                    <span className="text-2xl font-bold tabular-nums">
+                    <motion.span
+                      key={`x-${scoreGlowKey}`}
+                      initial={{ scale: 1.2 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="text-3xl font-bold tabular-nums score-glow-anim"
+                    >
                       {score.X}
-                    </span>
+                    </motion.span>
                   </div>
                   <Separator orientation="vertical" className="h-10" />
                   <div className="flex flex-col items-center gap-0.5">
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                       Draw
                     </span>
-                    <span className="text-2xl font-bold tabular-nums text-muted-foreground">
+                    <motion.span
+                      key={`d-${scoreGlowKey}`}
+                      initial={{ scale: 1.2 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="text-3xl font-bold tabular-nums text-muted-foreground score-glow-anim"
+                    >
                       {score.draw}
-                    </span>
+                    </motion.span>
                   </div>
                   <Separator orientation="vertical" className="h-10" />
                   <div className="flex flex-col items-center gap-0.5">
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                       {gameMode === "ai" ? "AI (O)" : "Player O"}
                     </span>
-                    <span className="text-2xl font-bold tabular-nums">
+                    <motion.span
+                      key={`o-${scoreGlowKey}`}
+                      initial={{ scale: 1.2 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="text-3xl font-bold tabular-nums score-glow-anim"
+                    >
                       {score.O}
-                    </span>
+                    </motion.span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -1781,6 +1972,28 @@ export default function TicTacToe() {
           </div>
         )}
 
+        {/* Game Result Streak Display */}
+        {streakResults.length > 0 && (
+          <div className="flex w-full items-center justify-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mr-1">Streak</span>
+            <div className="flex items-center gap-1">
+              {streakResults.map((result, idx) => (
+                <div
+                  key={idx}
+                  className={`streak-circle ${
+                    result === "X Won"
+                      ? "bg-emerald-500/70 shadow-[0_0_4px_rgba(16,185,129,0.3)]"
+                      : result === "O Won"
+                        ? "bg-amber-500/70 shadow-[0_0_4px_rgba(245,158,11,0.3)]"
+                        : "bg-muted-foreground/30"
+                  }`}
+                  title={result}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Move Timeline */}
         {timelineMoves.length > 0 && (
           <div className="flex w-full items-center gap-1 overflow-hidden">
@@ -1825,7 +2038,7 @@ export default function TicTacToe() {
         <div className="relative">
           {/* Turn indicator */}
           {status === "playing" && (
-            <div className="mb-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <div className="mb-4 flex flex-col items-center gap-1 text-sm text-muted-foreground">
               {aiThinking ? (
                 <motion.span
                   className="flex items-center gap-2"
@@ -1861,11 +2074,35 @@ export default function TicTacToe() {
                     {currentPlayer}
                   </motion.span>
                   <span className="text-sm">{statusText}</span>
+                  <motion.div
+                    className="bounce-arrow"
+                    animate={{ y: [0, 3, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ChevronUp className="size-3 text-primary/50" />
+                  </motion.div>
                   {gameStartTime && (
                     <div className="flex items-center gap-1 ml-2 text-xs text-muted-foreground/50">
                       <Timer className="size-3" />
                       <span className="font-mono tabular-nums">
                         {formatTime(elapsedSeconds)}
+                      </span>
+                    </div>
+                  )}
+                  {/* Speed mode countdown */}
+                  {settings.speedMode && !aiThinking && (
+                    <div className="flex items-center gap-1 ml-2">
+                      <Gauge className="size-3 text-muted-foreground/40" />
+                      <span
+                        className={`font-mono text-sm font-bold tabular-nums ${
+                          speedCountdown > 5
+                            ? "countdown-ok"
+                            : speedCountdown > 2
+                              ? "countdown-warn"
+                              : "countdown-danger"
+                        }`}
+                      >
+                        {speedCountdown}s
                       </span>
                     </div>
                   )}
@@ -1890,6 +2127,7 @@ export default function TicTacToe() {
                   const col = index % 3;
                   const isShaking = shakeCell === index;
                   const isRippling = rippleCell === index;
+                  const isFlashCell = flashCell === index;
                   const isTouchDown = touchDownCell === index;
                   const moveNum = settings.showMoveNumbers
                     ? moveNumberMap.current.get(index)
@@ -1915,8 +2153,10 @@ export default function TicTacToe() {
                         (gameMode === "ai" &&
                           (currentPlayer !== "X" || aiThinking))
                       }
-                      className={`relative flex size-24 items-center justify-center rounded-lg border text-2xl font-bold transition-all duration-200 sm:size-28 overflow-hidden ${
+                      className={`relative flex size-24 items-center justify-center rounded-lg border text-2xl font-bold transition-all duration-200 sm:size-28 overflow-hidden game-cell-hover ${
                         isShaking ? "cell-shake" : ""
+                      } ${
+                        isFlashCell ? "last-move-flash" : ""
                       } ${
                         isWinCell
                           ? winCellThemeClass
@@ -2240,7 +2480,7 @@ export default function TicTacToe() {
 
         {/* Move History */}
         {moveHistory.length > 0 && (
-          <Card className="w-full border-border/30 bg-card/20">
+          <Card className={`w-full border-border/30 bg-card/20 ${sectionsVisible ? "game-section-reveal" : ""}`} style={{ animationDelay: "0.1s" }}>
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="size-3 text-muted-foreground/60" />
@@ -2298,6 +2538,57 @@ export default function TicTacToe() {
                   );
                 })}
               </div>
+
+              {/* Undo History Visualization: Mini Board Timeline */}
+              {miniBoardStates.length > 1 && (
+                <div className="mt-3 pt-3 border-t border-border/15">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/40 mb-1.5 block">Board Timeline</span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                    {miniBoardStates.map((miniBoard, bIdx) => {
+                      const startIdx = moveHistory.length - 9 > 0 ? moveHistory.length - 9 : 0;
+                      const globalIdx = startIdx + bIdx;
+                      const isCurrent = bIdx === miniBoardStates.length - 1;
+                      return (
+                        <button
+                          key={bIdx}
+                          onClick={() => setSelectedCell(moveHistory[globalIdx]?.index ?? null)}
+                          className={`mini-board-thumb shrink-0 flex flex-col items-center gap-0.5 ${isCurrent ? "active" : ""}`}
+                          title={`Move ${globalIdx + 1}: ${moveHistory[globalIdx]?.player} → ${POSITION_LABELS[moveHistory[globalIdx]?.index]}`}
+                        >
+                          <svg width="36" height="36" viewBox="0 0 36 36" className="pointer-events-none">
+                            {/* Grid lines */}
+                            <line x1="12" y1="2" x2="12" y2="34" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
+                            <line x1="24" y1="2" x2="24" y2="34" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
+                            <line x1="2" y1="12" x2="34" y2="12" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
+                            <line x1="2" y1="24" x2="34" y2="24" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
+                            {/* Marks */}
+                            {miniBoard.map((cell, cIdx) => {
+                              const cx = (cIdx % 3) * 12 + 6;
+                              const cy = Math.floor(cIdx / 3) * 12 + 6;
+                              if (cell === "X") {
+                                return <line key={cIdx} x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="#10b981" strokeWidth="1.2" strokeLinecap="round" />;
+                              }
+                              if (cell === "O") {
+                                return <circle key={cIdx} cx={cx} cy={cy} r="3" fill="none" stroke="#f59e0b" strokeWidth="1.2" />;
+                              }
+                              return null;
+                            })}
+                            {/* Highlight last move in this state */}
+                            {(() => {
+                              const lastMove = moveHistory[globalIdx];
+                              if (!lastMove) return null;
+                              const lx = (lastMove.index % 3) * 12 + 6;
+                              const ly = Math.floor(lastMove.index / 3) * 12 + 6;
+                              return <circle cx={lx} cy={ly} r="5" fill="oklch(0.7 0.15 162 / 15%)" stroke="oklch(0.7 0.15 162 / 40%)" strokeWidth="0.5" />;
+                            })()}
+                          </svg>
+                          <span className="text-[8px] font-mono text-muted-foreground/30 tabular-nums">#{globalIdx + 1}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -2309,7 +2600,7 @@ export default function TicTacToe() {
             onOpenChange={setHistoryOpen}
             className="w-full"
           >
-            <Card className="border-border/30 bg-card/20">
+            <Card className={`border-border/30 bg-card/20 ${sectionsVisible ? "game-section-reveal" : ""}`} style={{ animationDelay: "0.2s" }}>
               <CollapsibleTrigger className="w-full">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-2">
@@ -2393,7 +2684,7 @@ export default function TicTacToe() {
         )}
 
         {/* Game Statistics */}
-        <Card className="w-full border-border/30 bg-card/20">
+        <Card className={`w-full border-border/30 bg-card/20 ${sectionsVisible ? "game-section-reveal" : ""}`} style={{ animationDelay: "0.3s" }}>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="size-3 text-muted-foreground/60" />
@@ -2521,7 +2812,7 @@ export default function TicTacToe() {
 
         {/* Unlocked Achievements */}
         {unlockedAchievements.size > 0 && (
-          <Card className="w-full border-border/30 bg-card/20">
+          <Card className={`w-full border-border/30 bg-card/20 ${sectionsVisible ? "game-section-reveal" : ""}`} style={{ animationDelay: "0.4s" }}>
             <CardContent className="pt-4 pb-3">
               <div className="flex items-center gap-2 mb-2">
                 <Award className="size-3 text-amber-500/70" />
@@ -2583,6 +2874,11 @@ export default function TicTacToe() {
             </span>
           </div>
           <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground/50">
+            {settings.speedMode && status === "playing" && !aiThinking && (
+              <span className={`font-bold ${speedCountdown > 5 ? "countdown-ok" : speedCountdown > 2 ? "countdown-warn" : "countdown-danger"}`}>
+                {speedCountdown}s
+              </span>
+            )}
             <span>{moveHistory.length}m</span>
             {gameStartTime && <span>{formatTime(elapsedSeconds)}</span>}
           </div>

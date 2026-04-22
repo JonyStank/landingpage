@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -24,6 +25,17 @@ import {
   Sparkles,
   FileText,
   Coffee,
+  Wrench,
+  Globe,
+  PenTool,
+  Container,
+  MonitorDot,
+  Search,
+  MessageSquare,
+  Boxes,
+  Rocket,
+  Quote,
+  Music,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -144,7 +156,6 @@ const techStackItems = [
   { name: "Prisma", color: "text-teal-400" },
 ];
 
-// Deterministic mini contribution grid: 7 rows × 12 columns
 const miniContribData = [
   [0, 1, 3, 2, 0, 4, 1, 0, 2, 3, 1, 0],
   [1, 2, 0, 4, 3, 0, 2, 1, 3, 0, 4, 2],
@@ -191,6 +202,31 @@ const blogPosts = [
   },
 ];
 
+/* ── Tools I Use ── */
+const toolsItems = [
+  { name: "VS Code", icon: Code2, color: "text-cyan-400" },
+  { name: "GitHub", icon: Globe, color: "text-foreground/80" },
+  { name: "Docker", icon: Container, color: "text-cyan-400" },
+  { name: "Figma", icon: PenTool, color: "text-teal-400" },
+  { name: "Postman", icon: MonitorDot, color: "text-amber-400" },
+  { name: "DevTools", icon: Search, color: "text-foreground/70" },
+  { name: "Terminal", icon: Terminal, color: "text-emerald-400" },
+  { name: "Notion", icon: FileText, color: "text-foreground/70" },
+  { name: "Discord", icon: MessageSquare, color: "text-cyan-400/80" },
+  { name: "Stack Overflow", icon: Layers, color: "text-amber-400" },
+  { name: "npm", icon: Boxes, color: "text-red-400/80" },
+  { name: "Vercel", icon: Rocket, color: "text-foreground/80" },
+];
+
+/* ── Inspirational Quotes ── */
+const quotes = [
+  { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+  { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+  { text: "Simplicity is the soul of efficiency.", author: "Austin Freeman" },
+  { text: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.", author: "Martin Fowler" },
+  { text: "The best error message is the one that never shows up.", author: "Thomas Fuchs" },
+];
+
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -201,7 +237,7 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
 function SparklineChart({ points, positive }: { points: number[]; positive: boolean }) {
@@ -254,8 +290,6 @@ function HighlightedCode({ code }: { code: string }) {
     <pre className="font-mono text-xs leading-relaxed text-foreground/70 overflow-x-auto">
       <code>
         {lines.map((line, lineIdx) => {
-          let processed = line;
-
           interface Match {
             start: number;
             end: number;
@@ -335,11 +369,80 @@ function HighlightedCode({ code }: { code: string }) {
   );
 }
 
+/* ── ScrollReveal wrapper component ── */
+function ScrollReveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            el.classList.add("revealed");
+          }, delay);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div ref={ref} className={`scroll-reveal ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ── Equalizer Bars ── */
+function EqualizerBars() {
+  return (
+    <div className="flex items-end gap-[2px] h-4">
+      <div className="eq-bar" style={{ height: "8px" }} />
+      <div className="eq-bar" style={{ height: "12px" }} />
+      <div className="eq-bar" style={{ height: "6px" }} />
+      <div className="eq-bar" style={{ height: "10px" }} />
+    </div>
+  );
+}
+
+/* ── Tool Card ── */
+function ToolCard({ tool, index }: { tool: { name: string; icon: LucideIcon; color: string }; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.05 * index, duration: 0.35, ease: "easeOut" }}
+      className="tool-card-glow group flex flex-col items-center gap-2.5 rounded-lg border border-border/30 bg-card/20 p-4 cursor-default"
+    >
+      <div className="flex size-10 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground transition-all duration-300 group-hover:text-foreground">
+        <tool.icon className="size-5" />
+      </div>
+      <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground/90 transition-colors duration-300">
+        {tool.name}
+      </span>
+    </motion.div>
+  );
+}
+
 export default function Home({ onNavigate }: HomeProps) {
   const [typedText, setTypedText] = useState("");
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  const [scrollY, setScrollY] = useState(0);
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  const [quoteVisible, setQuoteVisible] = useState(true);
+  const [quoteKey, setQuoteKey] = useState(0);
+
+  const mainRef = useRef<HTMLElement>(null);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(codeSnippet);
@@ -347,6 +450,7 @@ export default function Home({ onNavigate }: HomeProps) {
     setTimeout(() => setCopied(false), 2000);
   }, []);
 
+  // Typing animation
   useEffect(() => {
     const currentPhrase = typingPhrases[phraseIdx];
 
@@ -375,9 +479,68 @@ export default function Home({ onNavigate }: HomeProps) {
     return () => clearTimeout(timer);
   }, [typedText, isDeleting, phraseIdx]);
 
+  // Mouse follow gradient
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = mainRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMousePos({
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
+      });
+    };
+
+    const handleMouseLeave = () => {
+      setMousePos({ x: 0.5, y: 0.5 });
+    };
+
+    const el = mainRef.current;
+    if (el) {
+      el.addEventListener("mousemove", handleMouseMove);
+      el.addEventListener("mouseleave", handleMouseLeave);
+      return () => {
+        el.removeEventListener("mousemove", handleMouseMove);
+        el.removeEventListener("mouseleave", handleMouseLeave);
+      };
+    }
+  }, []);
+
+  // Parallax scroll tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Quote auto-cycle
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteVisible(false);
+      setTimeout(() => {
+        setQuoteIdx((prev) => (prev + 1) % quotes.length);
+        setQuoteKey((prev) => prev + 1);
+        setQuoteVisible(true);
+      }, 400);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Parallax speeds for particles (different speeds)
+  const particleParallaxSpeeds = [0.15, 0.25, 0.1, 0.3, 0.2, 0.35, 0.12, 0.28];
+
   return (
-    <main className="relative flex flex-1 flex-col items-center px-6 py-12 overflow-hidden noise-overlay">
+    <main ref={mainRef} className="relative flex flex-1 flex-col items-center px-6 py-12 overflow-hidden noise-overlay">
       <div className="ambient-grid absolute inset-0 pointer-events-none opacity-40" />
+
+      {/* Mouse-follow gradient overlay */}
+      <div
+        className="mouse-gradient-overlay active"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePos.x * 100}% ${mousePos.y * 100}%, oklch(0.65 0.15 162 / 0.07), transparent 60%)`,
+        }}
+      />
 
       <div
         className="absolute inset-0 pointer-events-none"
@@ -398,21 +561,27 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-b from-primary/[0.03] to-transparent pointer-events-none" />
 
+      {/* Floating particles with parallax */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="floating-particle absolute rounded-full bg-foreground/[0.03]"
-            style={{
-              width: `${4 + i * 3}px`,
-              height: `${4 + i * 3}px`,
-              left: `${15 + i * 10}%`,
-              top: `${20 + (i % 3) * 20}%`,
-              animationDelay: `${i * 1.2}s`,
-              animationDuration: `${6 + i * 2}s`,
-            }}
-          />
-        ))}
+        {Array.from({ length: 8 }).map((_, i) => {
+          const speed = particleParallaxSpeeds[i] || 0.2;
+          return (
+            <div
+              key={i}
+              className="floating-particle absolute rounded-full bg-foreground/[0.03]"
+              style={{
+                width: `${4 + i * 3}px`,
+                height: `${4 + i * 3}px`,
+                left: `${15 + i * 10}%`,
+                top: `${20 + (i % 3) * 20}%`,
+                animationDelay: `${i * 1.2}s`,
+                animationDuration: `${6 + i * 2}s`,
+                transform: `translateY(${-scrollY * speed}px)`,
+                transition: "transform 0.1s linear",
+              }}
+            />
+          );
+        })}
       </div>
 
       <motion.div
@@ -537,13 +706,39 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="my-10 w-full max-w-3xl opacity-30" />
 
+      {/* ── Currently Playing Status Bar ── */}
+      <ScrollReveal className="relative w-full max-w-3xl mb-6">
+        <div className="flex items-center gap-3 rounded-lg border border-border/30 bg-card/20 px-4 py-2.5">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <EqualizerBars />
+            <Music className="size-3.5 text-muted-foreground/50" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-foreground/90 truncate">lofi hip hop radio</span>
+              <span className="text-sm">📻</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground/60 truncate block">
+              beats to relax/study to
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 text-muted-foreground/40">
+              <div className="flex gap-[2px]">
+                <div className="w-[2px] h-2 rounded-full bg-muted-foreground/30" />
+                <div className="w-[2px] h-3 rounded-full bg-muted-foreground/30" />
+                <div className="w-[2px] h-1.5 rounded-full bg-muted-foreground/30" />
+                <div className="w-[2px] h-2.5 rounded-full bg-muted-foreground/30" />
+                <div className="w-[2px] h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+            </div>
+            <span className="text-[10px] text-muted-foreground/40 font-mono">3:24</span>
+          </div>
+        </div>
+      </ScrollReveal>
+
       {/* Code Terminal with line numbers and language badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55, duration: 0.6, ease: "easeOut" }}
-        className="relative mt-4 mb-4 w-full max-w-xl"
-      >
+      <ScrollReveal className="relative mt-4 mb-4 w-full max-w-xl">
         <div className="rounded-lg border border-border/30 bg-card/40 overflow-hidden backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-border/30 bg-secondary/20 px-4 py-2.5">
             <div className="flex items-center gap-2">
@@ -597,17 +792,12 @@ export default function Home({ onNavigate }: HomeProps) {
             <HighlightedCode code={codeSnippet} />
           </div>
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
       {/* Crypto Ticker with sparklines and Live indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.58, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-4 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
         <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
             <div className="flex items-center gap-2">
@@ -657,17 +847,12 @@ export default function Home({ onNavigate }: HomeProps) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
       {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-4 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
         <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
             <Clock className="size-4 text-muted-foreground" />
@@ -697,45 +882,40 @@ export default function Home({ onNavigate }: HomeProps) {
             ))}
           </div>
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
       {/* What I'm Learning Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.65, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-4 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
         <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
             <BookOpen className="size-4 text-muted-foreground" />
             <span className="text-sm font-medium text-foreground">What I&apos;m Learning</span>
           </div>
           <div className="divide-y divide-border/20">
-            {learningItems.map((item, idx) => (
+            {learningItems.map((lItem, idx) => (
               <motion.div
-                key={item.title}
+                key={lItem.title}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.75 + idx * 0.12, duration: 0.4 }}
                 className="flex items-center gap-4 px-4 py-3.5"
               >
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground">
-                  <item.icon className="size-4" />
+                  <lItem.icon className="size-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium text-foreground/90">{item.title}</span>
-                    <span className="font-mono text-[11px] text-muted-foreground">{item.progress}%</span>
+                    <span className="text-sm font-medium text-foreground/90">{lItem.title}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">{lItem.progress}%</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/40">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${item.progress}%` }}
+                      animate={{ width: `${lItem.progress}%` }}
                       transition={{ delay: 0.85 + idx * 0.12, duration: 0.8, ease: "easeOut" }}
-                      className={`h-full rounded-full bg-gradient-to-r ${item.color}`}
+                      className={`h-full rounded-full bg-gradient-to-r ${lItem.color}`}
                     />
                   </div>
                 </div>
@@ -743,15 +923,10 @@ export default function Home({ onNavigate }: HomeProps) {
             ))}
           </div>
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       {/* GitHub Activity Mini Graph */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.68, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-4 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
         <div className="rounded-lg border border-border/30 bg-card/20 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -800,85 +975,87 @@ export default function Home({ onNavigate }: HomeProps) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
       {/* Feature Cards with icon glow and complexity badges */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
-        className="relative mb-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2"
-      >
-        {features.map((feature, idx) => (
-          <motion.div
-            key={feature.title}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 + idx * 0.1, duration: 0.4 }}
-            className="group rounded-lg border border-border/30 bg-card/30 p-4 transition-all duration-300 hover:border-transparent hover:bg-card/50 hover:gradient-border hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5"
-          >
-            <div className="flex items-start gap-3">
-              <div className={`flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary/50 text-muted-foreground transition-all duration-300 group-hover:text-foreground ${feature.glowClass}`}>
-                <feature.icon className="size-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-foreground">
-                    {feature.title}
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className={`h-4 px-1.5 text-[8px] uppercase tracking-wider font-medium ${complexityColors[feature.complexity]}`}
-                  >
-                    {feature.complexity}
-                  </Badge>
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {features.map((feature, idx) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + idx * 0.1, duration: 0.4 }}
+              className="group rounded-lg border border-border/30 bg-card/30 p-4 transition-all duration-300 hover:border-transparent hover:bg-card/50 hover:gradient-border hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5"
+            >
+              <div className="flex items-start gap-3">
+                <div className={`flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary/50 text-muted-foreground transition-all duration-300 group-hover:text-foreground ${feature.glowClass}`}>
+                  <feature.icon className="size-4" />
                 </div>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-foreground">
+                      {feature.title}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className={`h-4 px-1.5 text-[8px] uppercase tracking-wider font-medium ${complexityColors[feature.complexity]}`}
+                    >
+                      {feature.complexity}
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground/0 transition-all duration-300 -translate-x-1 group-hover:text-muted-foreground/60 group-hover:translate-x-0" />
               </div>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/0 transition-all duration-300 -translate-x-1 group-hover:text-muted-foreground/60 group-hover:translate-x-0" />
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </ScrollReveal>
 
       {/* Tech Stack Marquee */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-8 w-full max-w-3xl overflow-hidden"
-      >
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl overflow-hidden">
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-background to-transparent" />
         <div className="marquee-track py-2">
-          {[...techStackItems, ...techStackItems].map((item, idx) => (
+          {[...techStackItems, ...techStackItems].map((sItem, idx) => (
             <div
-              key={`${item.name}-${idx}`}
+              key={`${sItem.name}-${idx}`}
               className="flex shrink-0 items-center gap-2 px-4"
             >
-              <div className={`flex size-7 items-center justify-center rounded-full border border-border/30 bg-secondary/20 text-[10px] font-bold ${item.color}`}>
-                {item.name.slice(0, 2)}
+              <div className={`flex size-7 items-center justify-center rounded-full border border-border/30 bg-secondary/20 text-[10px] font-bold ${sItem.color}`}>
+                {sItem.name.slice(0, 2)}
               </div>
-              <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">{item.name}</span>
+              <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">{sItem.name}</span>
               <span className="size-1 rounded-full bg-border/40" />
             </div>
           ))}
         </div>
-      </motion.div>
+      </ScrollReveal>
+
+      <Separator className="mb-8 w-full max-w-3xl opacity-30" />
+
+      {/* ── Tools I Use Grid ── */}
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
+        <div className="flex items-center gap-2 mb-5">
+          <Wrench className="size-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Tools I Use</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+          {toolsItems.map((tool, idx) => (
+            <ToolCard key={tool.name} tool={tool} index={idx} />
+          ))}
+        </div>
+      </ScrollReveal>
 
       <Separator className="mb-8 w-full max-w-3xl opacity-30" />
 
       {/* Animated Counter Section — My Numbers */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.85, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-8 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
         <div className="mb-4 text-center">
           <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/50 font-medium">
             My Numbers
@@ -903,17 +1080,52 @@ export default function Home({ onNavigate }: HomeProps) {
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="mb-8 w-full max-w-3xl opacity-30" />
 
+      {/* ── Inspirational Quote Section ── */}
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
+        <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
+            <Quote className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Inspiration</span>
+            <div className="flex-1" />
+            <span className="text-[10px] text-muted-foreground/40 font-mono">
+              {quoteIdx + 1}/{quotes.length}
+            </span>
+          </div>
+          <div className="relative px-6 py-6 min-h-[100px] flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={quoteKey}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: quoteVisible ? 1 : 0, y: quoteVisible ? 0 : -8 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="text-center max-w-md"
+              >
+                <p className="text-base leading-relaxed text-foreground/80 italic">
+                  &ldquo;{quotes[quoteIdx].text}&rdquo;
+                </p>
+                <p className="mt-3 text-xs font-medium text-muted-foreground/60">
+                  — {quotes[quoteIdx].author}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          {/* Progress bar */}
+          <div className="h-[2px] w-full bg-secondary/30 overflow-hidden">
+            <div
+              key={`progress-${quoteKey}`}
+              className="quote-progress-bar"
+            />
+          </div>
+        </div>
+      </ScrollReveal>
+
       {/* Blog Preview Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.88, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-8 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="size-4 text-muted-foreground" />
           <span className="text-sm font-medium text-foreground">Latest Blog Posts</span>
@@ -947,17 +1159,12 @@ export default function Home({ onNavigate }: HomeProps) {
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </ScrollReveal>
 
       <Separator className="mb-8 w-full max-w-3xl opacity-30" />
 
       {/* Quick Links with gradient sweep and dot pattern */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9, duration: 0.5, ease: "easeOut" }}
-        className="relative mb-8 w-full max-w-3xl"
-      >
+      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <button
             onClick={() => onNavigate("profile")}
@@ -986,7 +1193,7 @@ export default function Home({ onNavigate }: HomeProps) {
             <ArrowRight className="size-4 text-muted-foreground/40 transition-all duration-300 group-hover:text-teal-400/70 group-hover:translate-x-0.5" />
           </button>
         </div>
-      </motion.div>
+      </ScrollReveal>
     </main>
   );
 }
