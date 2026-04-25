@@ -178,7 +178,6 @@ const statsData = [
   { label: "Projects", value: 3, max: 5, icon: FolderGit2 },
   { label: "Experience", value: 2, suffix: "yr", max: 4, icon: Trophy },
   { label: "Technologies", value: 8, max: 12, icon: Zap },
-  { label: "GPA", value: 3.7, decimals: 1, max: 4.0, icon: BarChart3 },
 ];
 
 const githubStats = [
@@ -197,8 +196,7 @@ const socialLinks = [
 const learningItems = ["React", "TypeScript", "Next.js", "Algorithms"];
 
 const funFacts = [
-  { emoji: "🐛", text: "Debugged 10,000+ lines of code", back: "Mostly at 2 AM with a cup of coffee in hand. The best bugs always hide in the most obvious places." },
-  { emoji: "☕", text: "Consumed 1,024 cups of coffee", back: "That's approximately 2.8 cups per day over the past year. Double espresso is the fuel of choice." },
+  { emoji: "🐛", text: "Debugged 10,000+ lines of code", back: "Mostly at 2 AM. The best bugs always hide in the most obvious places." },
   { emoji: "🌙", text: "Best coding hours: 11 PM – 3 AM", back: "The night is peaceful, distractions are zero, and that's when the best algorithms are born." },
   { emoji: "🎮", text: "Built first game at age 14", back: "A simple Python text adventure game. It had 20 rooms and a dragon boss. Nostalgia!" },
   { emoji: "📚", text: "Read 50+ tech articles this year", back: "From MDN docs to obscure RFCs. Strong opinions, loosely held, and always learning." },
@@ -810,12 +808,10 @@ export default function Profile() {
               <Separator className="bg-border/40" />
               <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                 <div className="flex items-center gap-2">
-                  <Mail className="size-3.5 text-muted-foreground/60" />
-                  <span>cs111210554@example.edu</span>
+                  <span>s111210554@student.nqu.edu.tw</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Github className="size-3.5 text-muted-foreground/60" />
-                  <span>github.com/chenjiasheng</span>
+                  <span>github.com/JonyStank</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="size-3.5 text-muted-foreground/60" />
@@ -826,21 +822,7 @@ export default function Profile() {
                   <span>Expected Graduation: 2027</span>
                 </div>
               </div>
-              <Separator className="bg-border/40" />
-              <div className="flex items-center gap-2">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex size-9 items-center justify-center rounded-lg border border-border/30 bg-secondary/10 text-muted-foreground transition-all duration-200 hover:border-border/60 hover:bg-secondary/30 hover:text-foreground hover:shadow-sm"
-                  >
-                    <link.icon className="size-4" />
-                    <span className="sr-only">{link.label}</span>
-                  </a>
-                ))}
-              </div>
+
             </CardContent>
           </Card>
         </ScrollRevealSection>
@@ -857,7 +839,7 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-3">
                 {statsData.map((stat) => (
                   <StatCard key={stat.label} stat={stat} />
                 ))}
@@ -953,7 +935,7 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {funFacts.map((fact, idx) => (
                   <motion.div
                     key={idx}
