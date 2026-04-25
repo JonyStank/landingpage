@@ -16,15 +16,11 @@ import {
   Copy,
   Check,
   GitCommit,
-  GitCommitHorizontal,
-  GitPullRequest,
-  Clock,
   User,
   Gamepad2,
   BookOpen,
   Sparkles,
   FileText,
-  Coffee,
   Wrench,
   Globe,
   PenTool,
@@ -114,29 +110,6 @@ const cryptoData = [
   { symbol: "DOT", name: "Polkadot", price: "8.42", change: "+0.9%", positive: true, sparkline: [28, 26, 30, 27, 29] },
 ];
 
-const recentActivity = [
-  {
-    type: "commit" as const,
-    message: "feat: add AI opponent to Tic-Tac-Toe",
-    time: "3 hours ago",
-  },
-  {
-    type: "pr" as const,
-    message: "fix: resolve theme toggle persistence bug",
-    time: "5 hours ago",
-  },
-  {
-    type: "commit" as const,
-    message: "style: enhance profile page with timeline",
-    time: "1 day ago",
-  },
-  {
-    type: "pr" as const,
-    message: "feat: crypto ticker widget for home page",
-    time: "2 days ago",
-  },
-];
-
 const learningItems = [
   { icon: Sparkles, title: "React Advanced Patterns", progress: 70, color: "from-cyan-500 to-teal-400" },
   { icon: Layers, title: "Next.js App Router", progress: 45, color: "from-emerald-500 to-teal-400" },
@@ -156,50 +129,10 @@ const techStackItems = [
   { name: "Prisma", color: "text-teal-400" },
 ];
 
-const miniContribData = [
-  [0, 1, 3, 2, 0, 4, 1, 0, 2, 3, 1, 0],
-  [1, 2, 0, 4, 3, 0, 2, 1, 3, 0, 4, 2],
-  [3, 0, 2, 1, 4, 2, 0, 3, 1, 2, 0, 4],
-  [0, 4, 1, 3, 2, 1, 3, 0, 4, 1, 2, 3],
-  [2, 1, 4, 0, 3, 4, 1, 2, 0, 3, 4, 1],
-  [4, 3, 0, 2, 1, 3, 4, 1, 3, 0, 2, 4],
-  [1, 2, 3, 1, 0, 2, 3, 4, 2, 1, 3, 0],
-];
-
-const miniContribColors = [
-  "oklch(0 0 0 / 4%)",
-  "oklch(0.65 0.17 162 / 25%)",
-  "oklch(0.65 0.17 162 / 50%)",
-  "oklch(0.65 0.17 162 / 75%)",
-  "oklch(0.65 0.17 162 / 100%)",
-];
-
 const counterItems = [
   { label: "Lines of Code", value: 12847, icon: Code2 },
   { label: "Commits", value: 342, icon: GitCommit },
   { label: "Projects", value: 8, icon: Layers },
-  { label: "Coffee", value: 1024, icon: Coffee, emoji: "☕" },
-];
-
-const blogPosts = [
-  {
-    title: "Building a Tic-Tac-Toe AI with Minimax",
-    excerpt: "A deep dive into implementing the Minimax algorithm for an unbeatable AI opponent in React.",
-    date: "Jan 15",
-    readTime: "5 min read",
-  },
-  {
-    title: "My Journey into Algorithmic Trading",
-    excerpt: "From curiosity to building automated trading bots with Python and real market data.",
-    date: "Dec 28",
-    readTime: "8 min read",
-  },
-  {
-    title: "Why TypeScript Changed How I Code",
-    excerpt: "How strict typing caught bugs I never knew existed and improved my development workflow.",
-    date: "Nov 10",
-    readTime: "4 min read",
-  },
 ];
 
 /* ── Tools I Use ── */
@@ -851,41 +784,6 @@ export default function Home({ onNavigate }: HomeProps) {
 
       <Separator className="my-8 w-full max-w-3xl opacity-30" />
 
-      {/* Recent Activity */}
-      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
-        <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
-            <Clock className="size-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Recent Activity</span>
-          </div>
-          <div className="divide-y divide-border/20">
-            {recentActivity.map((activity, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + idx * 0.1, duration: 0.3 }}
-                className="flex items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/10"
-              >
-                <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary/50">
-                  {activity.type === "commit" ? (
-                    <GitCommit className="size-3.5 text-emerald-400/80" />
-                  ) : (
-                    <GitPullRequest className="size-3.5 text-teal-400/80" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground/90 truncate">{activity.message}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{activity.time}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </ScrollReveal>
-
-      <Separator className="my-8 w-full max-w-3xl opacity-30" />
-
       {/* What I'm Learning Section */}
       <ScrollReveal className="relative mb-4 w-full max-w-3xl">
         <div className="rounded-lg border border-border/30 bg-card/20 overflow-hidden">
@@ -921,58 +819,6 @@ export default function Home({ onNavigate }: HomeProps) {
                 </div>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </ScrollReveal>
-
-      {/* GitHub Activity Mini Graph */}
-      <ScrollReveal className="relative mb-4 w-full max-w-3xl">
-        <div className="rounded-lg border border-border/30 bg-card/20 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <GitCommitHorizontal className="size-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Contributions</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Last 12 weeks</span>
-          </div>
-          <div className="flex flex-col gap-[3px] items-start">
-            {miniContribData.map((row, rowIdx) => (
-              <motion.div
-                key={rowIdx}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 + rowIdx * 0.06, duration: 0.3 }}
-                className="flex gap-[3px]"
-              >
-                {row.map((level, colIdx) => (
-                  <motion.div
-                    key={`${rowIdx}-${colIdx}`}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      delay: 0.85 + (rowIdx * 12 + colIdx) * 0.004,
-                      duration: 0.15,
-                    }}
-                    className="contribution-cell"
-                    style={{ backgroundColor: miniContribColors[level] }}
-                  />
-                ))}
-              </motion.div>
-            ))}
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-emerald-400/70 font-medium">247 contributions</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-muted-foreground/40">Less</span>
-              {miniContribColors.slice(1).map((color, i) => (
-                <div
-                  key={i}
-                  className="contribution-cell"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-              <span className="text-[9px] text-muted-foreground/40">More</span>
-            </div>
           </div>
         </div>
       </ScrollReveal>
@@ -1123,45 +969,6 @@ export default function Home({ onNavigate }: HomeProps) {
           </div>
         </div>
       </ScrollReveal>
-
-      {/* Blog Preview Section */}
-      <ScrollReveal className="relative mb-8 w-full max-w-3xl">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="size-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Latest Blog Posts</span>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {blogPosts.map((post, idx) => (
-            <motion.div
-              key={post.title}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.95 + idx * 0.1, duration: 0.4 }}
-              className="group rounded-lg border border-border/30 bg-card/20 p-4 transition-all duration-300 hover:border-emerald-500/20 hover:bg-card/40 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/5 cursor-pointer"
-            >
-              <h4 className="text-sm font-medium text-foreground/90 leading-snug group-hover:text-emerald-400/90 transition-colors duration-300">
-                {post.title}
-              </h4>
-              <p className="mt-1.5 text-xs text-muted-foreground/60 leading-relaxed line-clamp-2">
-                {post.excerpt}
-              </p>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground/40">{post.date}</span>
-                  <span className="size-0.5 rounded-full bg-border/40" />
-                  <span className="text-[10px] text-muted-foreground/40">{post.readTime}</span>
-                </div>
-                <span className="flex items-center gap-1 text-[11px] text-emerald-400/70 transition-transform duration-200 group-hover:translate-x-0.5">
-                  Read
-                  <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </ScrollReveal>
-
-      <Separator className="mb-8 w-full max-w-3xl opacity-30" />
 
       {/* Quick Links with gradient sweep and dot pattern */}
       <ScrollReveal className="relative mb-8 w-full max-w-3xl">

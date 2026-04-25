@@ -1038,3 +1038,38 @@ Recommended Next Steps:
 - Add styled 404 page
 - Integrate real crypto API (CoinGecko) for live ticker data
 - Add swipe gesture support for the game on mobile
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Profile page cleanup — remove sections, update identity, clean home page
+
+Work Log:
+- Read full profile.tsx (1554 lines) and identified all sections (1-12)
+- Removed sections 7-12 from profile.tsx: Pinned Repositories, Projects, GitHub Stats, Coding Streak Calendar, Contact Form, Testimonials, Timeline
+- Cleaned up imports: removed ExternalLink, GitBranch, Send, CheckCircle2, Linkedin, Twitter, Star, GitCommitHorizontal, Quote, Moon, Gamepad2, BookOpenCheck, Bug, Database, Server, Smartphone, Coffee, Mail, Github, Input, Textarea, Select/SelectContent/SelectItem/SelectTrigger/SelectValue, FormEvent, Button
+- Added Lightbulb import to replace Coffee as Fun Facts section icon
+- Removed unused data: projects, testimonials, contributionData, githubStats, socialLinks, pinnedRepos, timeline
+- Removed unused components: StatusBadge, CodingStreakCalendar
+- Removed unused state: contactForm, contactSent, focusedField, preferredContact, timelineRef, timelineVisible
+- Removed unused effects: timeline IntersectionObserver, handleContactSubmit
+- Updated identity in profile: email already correct (s111210554@student.nqu.edu.tw), GitHub already correct (github.com/JonyStank)
+- Removed social link icons (Twitter, LinkedIn, GitHub, Mail logos) by removing socialLinks data entirely
+- Replaced Coffee icon with Lightbulb in Fun Facts section (user doesn't drink coffee)
+- Stats Overview: confirmed no GPA stat exists (already removed in prior round)
+- Fun Facts: confirmed no coffee fact exists (4 facts: debug, coding hours, first game, tech articles)
+- Reduced profile.tsx from 1554 lines to ~460 lines
+- Cleaned home.tsx: removed Recent Activity section, GitHub Activity Mini Graph (contributions), Latest Blog Posts section
+- Removed unused imports from home.tsx: Clock, GitCommitHorizontal, GitPullRequest, Coffee
+- Removed unused data from home.tsx: recentActivity, miniContribData, miniContribColors, blogPosts
+- Removed Coffee counter from counterItems (user doesn't drink coffee)
+- ESLint: zero errors
+
+Stage Summary:
+- Profile page: cleaned from 12 sections to 6 (Avatar, Stats, Skills Radar, Technical Skills, Fun Facts, Interests)
+- Profile file reduced from 1554 to ~460 lines
+- Home page: removed 3 sections (Recent Activity, Contributions graph, Blog Posts) and Coffee counter
+- All social logos removed (Twitter, LinkedIn, GitHub, Mail icons)
+- Coffee references removed from both pages (icon and counter)
+- Identity info: email (s111210554@student.nqu.edu.tw) and GitHub (github.com/JonyStank) confirmed correct
+- Lint clean, dev server compiled successfully
